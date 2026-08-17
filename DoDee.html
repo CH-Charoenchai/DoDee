@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoDee — จัดการงานประจำวัน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#EFF3FF;
+    --surface:#FFFFFF;
+    --surface-soft:#F6F4FF;
+    --ink:#362F47;
+    --ink-soft:#8A84A0;
+    --border:#E3E0F5;
+    --coral:#FF6B4A;
+    --coral-soft:#FFE4DC;
+    --yellow:#FFB84D;
+    --yellow-soft:#FFEFD6;
+    --mint:#2FBFAE;
+    --mint-soft:#D9F5EF;
+    --purple:#7C6FFF;
+    --purple-soft:#EAE7FF;
+    --pink:#FF8FA3;
+    --danger:#E8536B;
+    --shadow-soft:0 8px 24px rgba(124,111,255,.12);
+    --shadow-pop:0 16px 40px rgba(124,111,255,.22);
+    --radius-lg:24px;
+    --radius-md:16px;
+    --radius-sm:10px;
+    --font-display:'Fredoka',sans-serif;
+    --font-body:'Plus Jakarta Sans',sans-serif;
+    --font-mono:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.brand,.nav-label,.stat-num{font-family:var(--font-display);}
+  .hidden{display:none !important;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  input,select,textarea{font-family:inherit;}
+  a{color:inherit;}
+
+  /* ---------- AUTH SCREEN ---------- */
+  #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .auth-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);padding:40px 36px;width:100%;max-width:380px;text-align:center;}
+  .auth-blob{width:56px;height:56px;margin:0 auto 12px;border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;background:linear-gradient(135deg,var(--pink),var(--purple));}
+  .auth-card h1{font-size:26px;margin:0 0 4px;color:var(--ink);}
+  .auth-sub{color:var(--ink-soft);font-size:14px;margin:0 0 24px;}
+  .field{text-align:left;margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+  .field input{width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-soft);font-size:14.5px;color:var(--ink);outline:none;transition:border-color .15s;}
+  .field input:focus{border-color:var(--purple);}
+  .btn-primary{width:100%;padding:13px;border-radius:999px;background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;font-weight:700;font-size:15px;margin-top:6px;box-shadow:0 8px 20px rgba(124,111,255,.35);transition:transform .12s;}
+  .btn-primary:hover{transform:translateY(-1px);}
+  .btn-primary:active{transform:translateY(0);}
+  .auth-switch{margin-top:18px;font-size:13.5px;color:var(--ink-soft);}
+  .auth-switch button{background:none;color:var(--purple);font-weight:700;text-decoration:underline;}
+  .auth-error{background:var(--coral-soft);color:var(--coral);font-size:13px;padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:14px;text-align:left;}
+  .auth-hint{background:var(--mint-soft);color:#1a8a7c;font-size:13px;padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:14px;text-align:left;}
+
+  /* ---------- APP SHELL ---------- */
+  #app-screen{display:flex;min-height:100vh;}
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .brand{font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:28px;padding:0 8px;}
+  .brand-dot{width:14px;height:14px;border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;background:linear-gradient(135deg,var(--pink),var(--purple));}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-sm);color:var(--ink-soft);font-weight:600;font-size:14.5px;margin-bottom:4px;background:none;width:100%;text-align:left;transition:background .12s,color .12s;}
+  .nav-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .nav-item.active{background:var(--purple-soft);color:var(--purple);}
+  .nav-icon{width:18px;text-align:center;}
+  .sidebar-footer{margin-top:auto;border-top:1px solid var(--border);padding-top:14px;}
+  .user-email{font-size:12px;color:var(--ink-soft);padding:0 8px;margin-bottom:8px;word-break:break-all;}
+  .logout-btn{background:none;color:var(--ink-soft);font-size:13px;font-weight:600;padding:8px;width:100%;text-align:left;border-radius:var(--radius-sm);}
+  .logout-btn:hover{background:var(--coral-soft);color:var(--coral);}
+
+  .main{flex:1;padding:32px 40px 100px;width:100%;}
+  .view-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+  .view-header h1{font-size:26px;margin:0;}
+  .view-sub{color:var(--ink-soft);font-size:14px;margin-top:4px;}
+
+  /* mobile nav */
+  .mobile-topbar{display:none;}
+
+  /* ---------- HOME ---------- */
+  .range-toggle{display:flex;gap:6px;background:var(--surface-soft);padding:4px;border-radius:999px;}
+  .range-toggle button{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-soft);background:none;}
+  .range-toggle button.active{background:var(--surface);color:var(--purple);box-shadow:0 2px 8px rgba(124,111,255,.18);}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:24px;}
+  .stat-card{background:var(--surface);border-radius:var(--radius-md);padding:18px;box-shadow:var(--shadow-soft);}
+  .stat-num{font-size:28px;color:var(--ink);}
+  .stat-label{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+  .stat-card.accent-purple .stat-num{color:var(--purple);}
+  .stat-card.accent-mint .stat-num{color:var(--mint);}
+  .stat-sub{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+  .stat-delta{font-size:11.5px;font-weight:700;margin-top:4px;display:inline-flex;align-items:center;gap:3px;}
+  .stat-delta.up{color:#1a8a7c;}
+  .stat-delta.down{color:var(--danger);}
+  .stat-delta.flat{color:var(--ink-soft);}
+  .chart-wrap{position:relative;height:220px;}
+  .header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .btn-export{padding:9px 16px;border-radius:999px;background:var(--surface);border:1.5px solid var(--border);color:var(--ink-soft);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;}
+  .btn-export:hover{border-color:var(--purple);color:var(--purple);}
+
+  .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .panel{background:var(--surface);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow-soft);}
+  .panel h3{margin:0 0 14px;font-size:16px;}
+  .bar-row{margin-bottom:12px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-label{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px;}
+  .bar-track{height:9px;background:var(--surface-soft);border-radius:999px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:999px;}
+  .empty-note{color:var(--ink-soft);font-size:13.5px;padding:10px 0;}
+
+  .mini-list{display:flex;flex-direction:column;gap:2px;}
+  .mini-item{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:var(--radius-sm);cursor:pointer;}
+  .mini-item:hover{background:var(--surface-soft);}
+  .mini-item .mtitle{flex:1;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mini-item .mmeta{font-size:11.5px;color:var(--ink-soft);font-family:var(--font-mono);flex-shrink:0;}
+  .mini-item .mmeta.overdue{color:var(--danger);font-weight:700;}
+
+  /* ---------- WORK VIEW ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .toolbar input[type=text]{flex:1;min-width:180px;padding:10px 14px;border-radius:999px;border:1.5px solid var(--border);background:var(--surface);font-size:13.5px;outline:none;}
+  .toolbar input[type=text]:focus{border-color:var(--purple);}
+  .toolbar select{padding:10px 14px;border-radius:999px;border:1.5px solid var(--border);background:var(--surface);font-size:13.5px;color:var(--ink-soft);font-weight:600;outline:none;}
+
+  .section-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;margin:22px 0 10px;color:var(--ink);}
+  .section-title .count-pill{background:var(--purple-soft);color:var(--purple);font-size:11.5px;font-family:var(--font-mono);padding:2px 9px;border-radius:999px;}
+  .section-title.done .count-pill{background:var(--mint-soft);color:#1a8a7c;}
+
+  .task-list{display:flex;flex-direction:column;gap:9px;}
+  .task-card{display:flex;align-items:center;gap:13px;background:var(--surface);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-soft);cursor:pointer;transition:transform .1s;}
+  .task-card:hover{transform:translateY(-1px);}
+  .task-card.done{opacity:.72;}
+  .mood-dot{border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;flex-shrink:0;}
+  .task-body{flex:1;min-width:0;}
+  .task-title{font-weight:700;font-size:14.5px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .task-title.strike{text-decoration:line-through;color:var(--ink-soft);}
+  .task-title-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+  .task-title{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .task-title-row .tag-cat{flex-shrink:0;}
+  .task-tags{display:flex;gap:6px;flex-wrap:wrap;}
+  .task-note-preview{display:flex;gap:6px;font-size:12px;color:var(--ink-soft);margin-top:5px;line-height:1.4;}
+  .note-preview-icon{flex-shrink:0;}
+  .note-preview-text{white-space:pre-wrap;min-width:0;}
+  .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .tag-cat{background:var(--surface-soft);color:var(--ink-soft);}
+  .task-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+  .deadline-badge{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);}
+  .deadline-badge.overdue{color:var(--danger);font-weight:700;}
+  .status-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap;}
+  .status-todo{background:var(--coral-soft);color:var(--coral);}
+  .status-doing{background:var(--yellow-soft);color:#a66a00;}
+  .status-done{background:var(--mint-soft);color:#1a8a7c;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  .empty-state .blob-big{width:64px;height:64px;margin:0 auto 14px;border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;background:linear-gradient(135deg,var(--pink-soft,var(--purple-soft)),var(--purple-soft));}
+
+  .fab{position:fixed;right:32px;bottom:32px;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;box-shadow:0 12px 28px rgba(124,111,255,.4);display:flex;align-items:center;justify-content:center;transition:transform .15s;z-index:20;padding:0;}
+  .fab svg{width:22px;height:22px;display:block;}
+  .fab:hover{transform:scale(1.06) rotate(8deg);}
+
+  /* ---------- SETTINGS ---------- */
+  .settings-panel{background:var(--surface);border-radius:var(--radius-md);padding:22px;box-shadow:var(--shadow-soft);margin-bottom:18px;width:100%;}
+  .settings-panel h3{margin:0 0 4px;font-size:16px;}
+  .settings-panel .settings-sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
+  .cat-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .cat-row input{flex:1;padding:9px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-soft);font-size:13.5px;outline:none;}
+  .cat-row input:focus{border-color:var(--purple);}
+  .cat-icon-btn{width:32px;height:32px;border-radius:50%;background:var(--surface-soft);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+  .cat-icon-btn:hover{background:var(--coral-soft);color:var(--coral);}
+  .cat-row input.cat-color-input{flex:0 0 32px;width:32px;height:32px;padding:0;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:none;}
+  .cat-color-input::-webkit-color-swatch-wrapper{padding:2px;}
+  .cat-color-input::-webkit-color-swatch{border-radius:5px;border:none;}
+  .cat-add-row{display:flex;gap:8px;margin-top:10px;}
+  .cat-add-row input{flex:1;padding:9px 12px;border-radius:var(--radius-sm);border:1.5px dashed var(--border);background:var(--surface);font-size:13.5px;outline:none;}
+  .cat-add-row button{background:var(--purple);color:#fff;padding:0 16px;border-radius:var(--radius-sm);font-weight:700;font-size:13px;flex-shrink:0;}
+  .settings-panel .btn-primary{max-width:220px;}
+
+  /* ---------- MODALS ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(54,47,71,.42);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-pop);}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 12px;position:sticky;top:0;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:2;}
+  .modal-head h2{font-size:19px;margin:0;}
+  .modal-close{background:var(--surface-soft);color:var(--ink-soft);width:30px;height:30px;border-radius:50%;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .modal-close:hover{background:var(--coral-soft);color:var(--coral);}
+  .modal-body{padding:6px 24px 24px;}
+
+  .form-row{margin-bottom:14px;}
+  .form-row label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
+  .form-row input[type=text],.form-row input[type=date],.form-row textarea,.form-row select{width:100%;padding:11px 13px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-soft);font-size:14px;color:var(--ink);outline:none;resize:vertical;}
+  .form-row input:focus,.form-row textarea:focus,.form-row select:focus{border-color:var(--purple);}
+  .form-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .segmented{display:flex;gap:6px;}
+  .segmented button{flex:1;padding:9px 6px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+  .segmented button.sel-urgent.active{background:var(--coral-soft);border-color:var(--coral);color:var(--coral);}
+  .segmented button.sel-impact.active{background:var(--purple-soft);border-color:var(--purple);color:var(--purple);}
+  .segmented button.sel-status[data-val="ยังไม่ทำ"].active{background:var(--coral-soft);border-color:var(--coral);color:var(--coral);}
+  .segmented button.sel-status[data-val="กำลังทำ"].active{background:var(--yellow-soft);border-color:var(--yellow);color:#a66a00;}
+  .segmented button.sel-status[data-val="เสร็จแล้ว"].active{background:var(--mint-soft);border-color:var(--mint);color:#1a8a7c;}
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .btn-ghost{flex:1;padding:12px;border-radius:999px;background:var(--surface-soft);color:var(--ink-soft);font-weight:700;font-size:14px;}
+  .btn-ghost:hover{background:var(--border);}
+  .btn-submit{flex:2;padding:12px;border-radius:999px;background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;font-weight:700;font-size:14px;}
+
+  .notes-timeline{display:flex;flex-direction:column;gap:10px;margin:10px 0 16px;max-height:260px;overflow-y:auto;padding-right:4px;}
+  .note-item{background:var(--surface-soft);border-radius:var(--radius-sm);padding:10px 13px;}
+  .note-date{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .note-content{font-size:13.5px;line-height:1.5;white-space:pre-wrap;}
+  .note-add-row{display:flex;gap:8px;}
+  .note-add-row textarea{flex:1;min-height:44px;}
+  .note-add-row button{background:var(--purple);color:#fff;padding:0 16px;border-radius:var(--radius-sm);font-weight:700;font-size:13px;flex-shrink:0;}
+  .danger-zone{margin-top:20px;border-top:1px solid var(--border);padding-top:16px;}
+  .btn-delete{background:none;color:var(--danger);font-size:13px;font-weight:700;padding:8px 0;}
+  .btn-delete:hover{text-decoration:underline;}
+
+  .links-list{display:flex;flex-direction:column;gap:6px;margin:8px 0 10px;}
+  .link-item{display:flex;align-items:center;gap:8px;background:var(--surface-soft);border-radius:var(--radius-sm);padding:8px 12px;}
+  .link-item .link-icon{flex-shrink:0;font-size:13px;}
+  .link-item a{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--purple);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .link-item a:hover{text-decoration:underline;}
+  .link-remove-btn{flex-shrink:0;background:none;color:var(--ink-soft);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+  .link-remove-btn:hover{background:var(--coral-soft);color:var(--coral);}
+  .link-add-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .link-add-row input{flex:1;min-width:110px;padding:9px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);font-size:13px;outline:none;}
+  .link-add-row input:focus{border-color:var(--purple);}
+  .link-add-row button{background:var(--purple);color:#fff;padding:0 16px;border-radius:var(--radius-sm);font-weight:700;font-size:13px;flex-shrink:0;}
+  .link-count-badge{font-family:var(--font-mono);font-size:11px;color:var(--purple);display:inline-flex;align-items:center;gap:3px;}
+
+  #toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;}
+  .toast{background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-pop);animation:toastIn .2s ease-out;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
+  @media (max-width:860px){
+    .sidebar{display:none;}
+    .mobile-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15;}
+    .mobile-nav{display:flex;gap:6px;background:var(--surface-soft);padding:4px;border-radius:999px;}
+    .mobile-nav button{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:var(--ink-soft);background:none;}
+    .mobile-nav button.active{background:var(--surface);color:var(--purple);}
+    .main{padding:20px 16px 100px;}
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .panel-grid{grid-template-columns:1fr;}
+    .form-two{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-blob"></div>
+    <h1>DoDee</h1>
+    <p class="auth-sub" id="auth-sub">เข้าสู่ระบบเพื่อจัดการงานของคุณ</p>
+    <div id="auth-message"></div>
+    <form id="auth-form">
+      <div class="field">
+        <label>อีเมล</label>
+        <input type="email" id="auth-email" required placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="auth-password" required placeholder="อย่างน้อย 6 ตัวอักษร" minlength="6">
+      </div>
+      <button type="submit" class="btn-primary" id="auth-submit-btn">เข้าสู่ระบบ</button>
+    </form>
+    <div class="auth-switch">
+      <span id="auth-switch-text">ยังไม่มีบัญชี?</span>
+      <button id="auth-switch-btn" type="button">สมัครสมาชิก</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" class="hidden">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-dot"></span>DoDee</div>
+    <button class="nav-item active" data-view="home"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-item" data-view="work"><span class="nav-icon">📋</span>Work</button>
+    <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span>Settings</button>
+    <div class="sidebar-footer">
+      <div class="user-email" id="sidebar-email"></div>
+      <button class="logout-btn" id="logout-btn">ออกจากระบบ</button>
+    </div>
+  </aside>
+
+  <div style="flex:1;display:flex;flex-direction:column;">
+    <div class="mobile-topbar">
+      <div class="brand" style="margin:0;font-size:18px;"><span class="brand-dot"></span>DoDee</div>
+      <div class="mobile-nav">
+        <button class="active" data-view="home">Home</button>
+        <button data-view="work">Work</button>
+        <button data-view="settings">⚙️</button>
+      </div>
+      <button class="logout-btn" id="logout-btn-mobile" style="width:auto;padding:6px 10px;">ออก</button>
+    </div>
+
+    <main class="main">
+      <div id="home-view"></div>
+      <div id="work-view" class="hidden"></div>
+      <div id="settings-view" class="hidden"></div>
+    </main>
+  </div>
+
+  <button class="fab" id="fab-add" title="เพิ่มงานใหม่">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+</div>
+
+<div class="modal-overlay hidden" id="add-modal">
+  <div class="modal">
+    <div class="modal-head"><h2>เพิ่มงานใหม่</h2><button class="modal-close" data-close="add-modal">✕</button></div>
+    <div class="modal-body">
+      <form id="add-form">
+        <div class="form-row">
+          <label>ชื่องาน</label>
+          <input type="text" id="add-title" required placeholder="เช่น ทำสไลด์นำเสนอลูกค้า A">
+        </div>
+        <div class="form-row">
+          <label>รายละเอียด (จะกลายเป็นโน้ตแรกของงานนี้)</label>
+          <textarea id="add-desc" rows="3" placeholder="รายละเอียด บริบท หรือสิ่งที่ต้องทำ..."></textarea>
+        </div>
+        <div class="form-row">
+          <label>หมวดหมู่</label>
+          <select id="add-category-select"></select>
+          <input type="text" id="add-category-new" class="hidden" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่..." style="margin-top:8px;">
+        </div>
+        <div class="form-row">
+          <label>urgency</label>
+          <div class="segmented" id="add-urgency-group">
+            <button type="button" class="sel-urgent" data-val="ไม่ด่วน">ไม่ด่วน</button>
+            <button type="button" class="sel-urgent active" data-val="ปกติ">ปกติ</button>
+            <button type="button" class="sel-urgent" data-val="ด่วนมาก">ด่วนมาก</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Impact</label>
+          <div class="segmented" id="add-impact-group">
+            <button type="button" class="sel-impact" data-val="ต่ำ">ต่ำ</button>
+            <button type="button" class="sel-impact active" data-val="กลาง">กลาง</button>
+            <button type="button" class="sel-impact" data-val="สูง">สูง</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Deadline (ถ้ามี)</label>
+          <input type="date" id="add-deadline">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" data-close="add-modal">ยกเลิก</button>
+          <button type="submit" class="btn-submit">บันทึกงาน</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="task-modal">
+  <div class="modal">
+    <div class="modal-head"><h2 id="tm-title" style="word-break:break-word;"></h2><button class="modal-close" data-close="task-modal">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>สถานะ</label>
+        <div class="segmented" id="tm-status-group">
+          <button type="button" class="sel-status" data-val="ยังไม่ทำ">ยังไม่ทำ</button>
+          <button type="button" class="sel-status" data-val="กำลังทำ">กำลังทำ</button>
+          <button type="button" class="sel-status" data-val="เสร็จแล้ว">เสร็จแล้ว</button>
+        </div>
+      </div>
+      <div class="form-two">
+        <div class="form-row">
+          <label>หมวดหมู่</label>
+          <select id="tm-category"></select>
+          <input type="text" id="tm-category-new" class="hidden" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่แล้วกด Enter" style="margin-top:8px;">
+        </div>
+        <div class="form-row">
+          <label>Deadline</label>
+          <input type="date" id="tm-deadline">
+        </div>
+      </div>
+      <div class="form-two">
+        <div class="form-row">
+          <label>urgency</label>
+          <select id="tm-urgency">
+            <option value="ไม่ด่วน">ไม่ด่วน</option>
+            <option value="ปกติ">ปกติ</option>
+            <option value="ด่วนมาก">ด่วนมาก</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Impact</label>
+          <select id="tm-impact">
+            <option value="ต่ำ">ต่ำ</option>
+            <option value="กลาง">กลาง</option>
+            <option value="สูง">สูง</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:6px;">
+        <label>ลิงก์ที่เกี่ยวข้อง</label>
+        <div class="links-list" id="tm-links"></div>
+        <div class="link-add-row">
+          <input type="text" id="tm-link-url" placeholder="วางลิงก์ เช่น https://...">
+          <input type="text" id="tm-link-label" placeholder="ชื่อลิงก์ (ไม่บังคับ)">
+          <button type="button" id="tm-link-submit">เพิ่ม</button>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:6px;">
+        <label>ไทม์ไลน์ / โน้ต</label>
+        <div class="notes-timeline" id="tm-notes"></div>
+        <div class="note-add-row">
+          <textarea id="tm-note-input" placeholder="พิมพ์อัปเดตใหม่..."></textarea>
+          <button type="button" id="tm-note-submit">เพิ่ม</button>
+        </div>
+      </div>
+
+      <div class="danger-zone">
+        <button type="button" class="btn-delete" id="tm-delete-btn">🗑 ลบงานนี้</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const SUPABASE_URL = "https://tawirbrjcmvmtnmnzhld.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhd2lyYnJqY212bXRubW56aGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NDE2MzAsImV4cCI6MjEwMjUxNzYzMH0.4qsbaq4ViJaW-3dP0IXA-MEqEl_ELob-cgTAQX3IHfw";
+
+// custom storage adapter using window.storage instead of localStorage
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+let currentUser = null;
+let tasksCache = [];
+let currentView = 'home';
+let isSignupMode = false;
+let activeTaskId = null;
+let homeRange = 'month'; // month | quarter | all
+const DEFAULT_CATEGORIES = ['Project','Meeting','Follow-up','Admin'];
+let userCategories = [...DEFAULT_CATEGORIES];
+let categoryColors = {};
+const DEFAULT_CATEGORY_COLORS = { 'Project':'#7C6FFF', 'Meeting':'#FF8FA3', 'Follow-up':'#FFB84D', 'Admin':'#2FBFAE' };
+function colorForCategory(cat){
+  return categoryColors[cat] || DEFAULT_CATEGORY_COLORS[cat] || '#8A84A0';
+}
+
+const URGENCY_COLOR = { 'ด่วนมาก':'var(--coral)', 'ปกติ':'var(--yellow)', 'ไม่ด่วน':'var(--mint)' };
+const IMPACT_SIZE = { 'สูง':18, 'กลาง':14, 'ต่ำ':10 };
+const STATUS_CLASS = { 'ยังไม่ทำ':'status-todo', 'กำลังทำ':'status-doing', 'เสร็จแล้ว':'status-done' };
+
+// ---------- helpers ----------
+function $(sel){ return document.querySelector(sel); }
+function $all(sel){ return document.querySelectorAll(sel); }
+function fmtDate(d){
+  if(!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});
+}
+function fmtDateTime(d){
+  const dt = new Date(d);
+  return dt.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) + ' ' + dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+}
+function isOverdue(task){
+  if(!task.deadline || task.status === 'เสร็จแล้ว') return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return new Date(task.deadline) < today;
+}
+function showToast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  $('#toast-container').appendChild(el);
+  setTimeout(()=>el.remove(), 2400);
+}
+function moodDot(task){
+  const size = IMPACT_SIZE[task.impact] || 12;
+  const color = colorForCategory(task.category);
+  return `<span class="mood-dot" style="width:${size}px;height:${size}px;background:${color};"></span>`;
+}
+
+// ---------- AUTH ----------
+$('#auth-switch-btn').addEventListener('click', ()=>{
+  isSignupMode = !isSignupMode;
+  $('#auth-sub').textContent = isSignupMode ? 'สร้างบัญชีใหม่เพื่อเริ่มใช้งาน' : 'เข้าสู่ระบบเพื่อจัดการงานของคุณ';
+  $('#auth-submit-btn').textContent = isSignupMode ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ';
+  $('#auth-switch-text').textContent = isSignupMode ? 'มีบัญชีอยู่แล้ว?' : 'ยังไม่มีบัญชี?';
+  $('#auth-switch-btn').textContent = isSignupMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+  $('#auth-message').innerHTML = '';
+});
+
+$('#auth-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('#auth-email').value.trim();
+  const password = $('#auth-password').value;
+  $('#auth-message').innerHTML = '';
+  $('#auth-submit-btn').textContent = 'กำลังดำเนินการ...';
+  try{
+    if(isSignupMode){
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if(error) throw error;
+      if(data.user && !data.session){
+        $('#auth-message').innerHTML = `<div class="auth-hint">สมัครสำเร็จ! เช็คอีเมลเพื่อยืนยันบัญชี แล้วกลับมาเข้าสู่ระบบนะคะ</div>`;
+        isSignupMode = false;
+        $('#auth-sub').textContent = 'เข้าสู่ระบบเพื่อจัดการงานของคุณ';
+        $('#auth-submit-btn').textContent = 'เข้าสู่ระบบ';
+        $('#auth-switch-text').textContent = 'ยังไม่มีบัญชี?';
+        $('#auth-switch-btn').textContent = 'สมัครสมาชิก';
+      }
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+    }
+  } catch(err){
+    $('#auth-message').innerHTML = `<div class="auth-error">${err.message || 'เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะคะ'}</div>`;
+  } finally {
+    $('#auth-submit-btn').textContent = isSignupMode ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ';
+  }
+});
+
+async function handleLogout(){
+  await sb.auth.signOut();
+}
+$('#logout-btn').addEventListener('click', handleLogout);
+$('#logout-btn-mobile').addEventListener('click', handleLogout);
+
+sb.auth.onAuthStateChange((event, session)=>{
+  if(session && session.user){
+    currentUser = session.user;
+    $('#auth-screen').classList.add('hidden');
+    $('#app-screen').classList.remove('hidden');
+    $('#sidebar-email').textContent = currentUser.email;
+    loadSettings();
+    loadTasks();
+  } else {
+    currentUser = null;
+    $('#app-screen').classList.add('hidden');
+    $('#auth-screen').classList.remove('hidden');
+  }
+});
+
+// ---------- NAV ----------
+function switchView(view){
+  currentView = view;
+  $all('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  $all('.mobile-nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  $('#home-view').classList.toggle('hidden', view!=='home');
+  $('#work-view').classList.toggle('hidden', view!=='work');
+  $('#settings-view').classList.toggle('hidden', view!=='settings');
+  $('#fab-add').classList.toggle('hidden', view==='settings');
+  if(view==='home') renderHome();
+  else if(view==='work') renderWork();
+  else renderSettings();
+}
+$all('[data-view]').forEach(b=> b.addEventListener('click', ()=>switchView(b.dataset.view)));
+
+// ---------- DATA ----------
+let latestNoteByTask = {};
+
+async function loadTasks(){
+  const { data, error } = await sb.from('tasks').select('*').order('created_at', {ascending:true});
+  if(error){ showToast('โหลดข้อมูลไม่สำเร็จ: '+error.message); return; }
+  tasksCache = data || [];
+
+  const { data: notesData, error: notesErr } = await sb.from('task_notes')
+    .select('task_id,content,created_at')
+    .order('created_at', {ascending:false});
+  latestNoteByTask = {};
+  if(!notesErr && notesData){
+    notesData.forEach(n=>{
+      if(!latestNoteByTask[n.task_id]) latestNoteByTask[n.task_id] = n;
+    });
+  }
+
+  updateCategoryList();
+  if(currentView==='home') renderHome(); else renderWork();
+}
+
+function allKnownCategories(){
+  const cats = new Set(userCategories);
+  tasksCache.forEach(t=>cats.add(t.category));
+  return [...cats];
+}
+
+function categoryOptionsHtml(selected){
+  return allKnownCategories().map(c=>`<option value="${escapeHtml(c)}" ${c===selected?'selected':''}>${escapeHtml(c)}</option>`).join('')
+    + `<option value="__new__">+ เพิ่มหมวดหมู่ใหม่...</option>`;
+}
+
+function updateCategoryList(){
+  const addSel = $('#add-category-select');
+  if(addSel){
+    const cur = (addSel.value && addSel.value !== '__new__') ? addSel.value : 'Project';
+    addSel.innerHTML = categoryOptionsHtml(cur);
+  }
+  const wf = $('#work-cat-filter');
+  if(wf){
+    const cur = wf.value;
+    wf.innerHTML = `<option value="">ทุกหมวดหมู่</option>` + allKnownCategories().map(c=>`<option value="${escapeHtml(c)}" ${c===cur?'selected':''}>${escapeHtml(c)}</option>`).join('');
+  }
+}
+
+function wireCategorySelect(selectEl, newInputEl, onFinal){
+  selectEl.addEventListener('change', ()=>{
+    if(selectEl.value === '__new__'){
+      newInputEl.classList.remove('hidden');
+      newInputEl.value = '';
+      newInputEl.focus();
+    } else {
+      newInputEl.classList.add('hidden');
+      onFinal(selectEl.value);
+    }
+  });
+  newInputEl.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); newInputEl.blur(); }
+  });
+  newInputEl.addEventListener('blur', async ()=>{
+    const val = newInputEl.value.trim();
+    if(!val) { selectEl.value = allKnownCategories()[0] || 'Project'; newInputEl.classList.add('hidden'); return; }
+    if(!userCategories.includes(val)) await saveCategories([...userCategories, val]);
+    onFinal(val, true);
+  });
+}
+
+async function loadSettings(){
+  const { data, error } = await sb.from('app_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
+  if(error){ console.error(error); return; }
+  if(!data){
+    const { data: created, error: insErr } = await sb.from('app_settings').insert({ user_id: currentUser.id, categories: DEFAULT_CATEGORIES, category_colors: DEFAULT_CATEGORY_COLORS }).select().single();
+    if(!insErr && created){ userCategories = created.categories; categoryColors = created.category_colors || {}; }
+  } else {
+    userCategories = data.categories && data.categories.length ? data.categories : [...DEFAULT_CATEGORIES];
+    categoryColors = data.category_colors || {};
+  }
+  updateCategoryList();
+  if(currentView==='settings') renderSettings();
+}
+
+async function saveCategories(newList){
+  userCategories = newList;
+  const { error } = await sb.from('app_settings').update({ categories: newList, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+  if(error){ showToast('บันทึกหมวดหมู่ไม่สำเร็จ: '+error.message); return; }
+  updateCategoryList();
+}
+async function saveCategoryColor(cat, color){
+  categoryColors = { ...categoryColors, [cat]: color };
+  const { error } = await sb.from('app_settings').update({ category_colors: categoryColors, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+  if(error){ showToast('บันทึกสีไม่สำเร็จ: '+error.message); return; }
+  if(currentView==='work') renderWorkLists();
+  else if(currentView==='home') renderHome();
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str==null ? '' : str;
+  return d.innerHTML;
+}
+
+// ---------- ADD TASK ----------
+let addUrgency = 'ปกติ', addImpact = 'กลาง';
+$('#add-urgency-group').addEventListener('click', (e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  addUrgency = e.target.dataset.val;
+  $all('#add-urgency-group button').forEach(b=>b.classList.toggle('active', b===e.target));
+});
+$('#add-impact-group').addEventListener('click', (e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  addImpact = e.target.dataset.val;
+  $all('#add-impact-group button').forEach(b=>b.classList.toggle('active', b===e.target));
+});
+
+$('#fab-add').addEventListener('click', ()=>{
+  $('#add-form').reset();
+  $('#add-category-select').innerHTML = categoryOptionsHtml('Project');
+  $('#add-category-select').value = 'Project';
+  $('#add-category-new').classList.add('hidden');
+  addUrgency='ปกติ'; addImpact='กลาง';
+  $all('#add-urgency-group button').forEach(b=>b.classList.toggle('active', b.dataset.val==='ปกติ'));
+  $all('#add-impact-group button').forEach(b=>b.classList.toggle('active', b.dataset.val==='กลาง'));
+  $('#add-modal').classList.remove('hidden');
+});
+
+let addSelectedCategory = 'Project';
+wireCategorySelect($('#add-category-select'), $('#add-category-new'), (val)=>{ addSelectedCategory = val; });
+
+$all('[data-close]').forEach(b=> b.addEventListener('click', ()=>{
+  $('#'+b.dataset.close).classList.add('hidden');
+}));
+
+$('#add-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const title = $('#add-title').value.trim();
+  const desc = $('#add-desc').value.trim();
+  const catSelectVal = $('#add-category-select').value;
+  const category = (catSelectVal === '__new__' ? $('#add-category-new').value.trim() : catSelectVal) || 'Project';
+  const deadline = $('#add-deadline').value || null;
+  if(!title) return;
+  if(catSelectVal === '__new__' && category && !userCategories.includes(category)){
+    await saveCategories([...userCategories, category]);
+  }
+
+  const { data, error } = await sb.from('tasks').insert({
+    user_id: currentUser.id, title, category,
+    urgency: addUrgency, impact: addImpact,
+    status: 'ยังไม่ทำ', deadline
+  }).select().single();
+
+  if(error){ showToast('เพิ่มงานไม่สำเร็จ: '+error.message); return; }
+
+  if(desc){
+    await sb.from('task_notes').insert({ task_id: data.id, user_id: currentUser.id, content: desc });
+  }
+  $('#add-modal').classList.add('hidden');
+  showToast('เพิ่มงานใหม่แล้ว ✨');
+  await loadTasks();
+});
+
+// ---------- TASK DETAIL MODAL ----------
+let tmStatus = 'ยังไม่ทำ';
+$('#tm-status-group').addEventListener('click', async (e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  tmStatus = e.target.dataset.val;
+  $all('#tm-status-group button').forEach(b=>b.classList.toggle('active', b===e.target));
+  await updateTaskField('status', tmStatus, tmStatus==='เสร็จแล้ว' ? {completed_at: new Date().toISOString()} : {completed_at:null});
+});
+
+async function updateTaskField(field, value, extra){
+  const payload = { [field]: value, ...(extra||{}) };
+  const { error } = await sb.from('tasks').update(payload).eq('id', activeTaskId);
+  if(error){ showToast('อัปเดตไม่สำเร็จ: '+error.message); return; }
+  const t = tasksCache.find(x=>x.id===activeTaskId);
+  if(t) Object.assign(t, payload);
+  showToast('บันทึกแล้ว');
+  if(currentView==='work') renderWorkLists();
+  else if(currentView==='home') renderHome();
+}
+
+wireCategorySelect($('#tm-category'), $('#tm-category-new'), (val)=>{ updateTaskField('category', val || 'Project'); });
+$('#tm-deadline').addEventListener('change', (e)=>updateTaskField('deadline', e.target.value || null));
+$('#tm-urgency').addEventListener('change', (e)=>updateTaskField('urgency', e.target.value));
+$('#tm-impact').addEventListener('change', (e)=>updateTaskField('impact', e.target.value));
+
+// ---------- TASK LINKS ----------
+let tmLinks = [];
+
+function normalizeUrl(raw){
+  let url = raw.trim();
+  if(!url) return '';
+  if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  return url;
+}
+
+function renderLinks(){
+  if(!tmLinks.length){
+    $('#tm-links').innerHTML = '<div class="empty-note">ยังไม่มีลิงก์ เพิ่มลิงก์ที่เกี่ยวข้องได้เลย</div>';
+    return;
+  }
+  $('#tm-links').innerHTML = tmLinks.map((l,i)=>`
+    <div class="link-item">
+      <span class="link-icon">🔗</span>
+      <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.label || l.url)}</a>
+      <button type="button" class="link-remove-btn" data-idx="${i}" title="ลบลิงก์">✕</button>
+    </div>
+  `).join('');
+  $all('.link-remove-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx, 10);
+      tmLinks.splice(idx, 1);
+      renderLinks();
+      updateTaskField('links', tmLinks);
+    });
+  });
+}
+
+function addLinkFromInputs(){
+  const urlRaw = $('#tm-link-url').value.trim();
+  const label = $('#tm-link-label').value.trim();
+  if(!urlRaw) return;
+  tmLinks.push({ url: normalizeUrl(urlRaw), label });
+  $('#tm-link-url').value = '';
+  $('#tm-link-label').value = '';
+  renderLinks();
+  updateTaskField('links', tmLinks);
+}
+
+$('#tm-link-submit').addEventListener('click', addLinkFromInputs);
+$('#tm-link-url').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addLinkFromInputs(); } });
+$('#tm-link-label').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addLinkFromInputs(); } });
+
+async function openTaskModal(taskId){
+  activeTaskId = taskId;
+  const t = tasksCache.find(x=>x.id===taskId);
+  if(!t) return;
+  $('#tm-title').textContent = t.title;
+  $('#tm-category').innerHTML = categoryOptionsHtml(t.category);
+  $('#tm-category-new').classList.add('hidden');
+  $('#tm-deadline').value = t.deadline || '';
+  $('#tm-urgency').value = t.urgency;
+  $('#tm-impact').value = t.impact;
+  tmStatus = t.status;
+  $all('#tm-status-group button').forEach(b=>b.classList.toggle('active', b.dataset.val===t.status));
+  tmLinks = Array.isArray(t.links) ? [...t.links] : [];
+  $('#tm-link-url').value = '';
+  $('#tm-link-label').value = '';
+  renderLinks();
+  $('#tm-note-input').value = '';
+  $('#tm-notes').innerHTML = '<div class="empty-note">กำลังโหลด...</div>';
+  $('#task-modal').classList.remove('hidden');
+
+  const { data, error } = await sb.from('task_notes').select('*').eq('task_id', taskId).order('created_at',{ascending:false});
+  if(error){ $('#tm-notes').innerHTML = '<div class="empty-note">โหลดโน้ตไม่สำเร็จ</div>'; return; }
+  renderNotes(data);
+}
+
+function renderNotes(notes){
+  if(!notes || notes.length===0){
+    $('#tm-notes').innerHTML = '<div class="empty-note">ยังไม่มีโน้ต เพิ่มอัปเดตแรกได้เลย</div>';
+    return;
+  }
+  $('#tm-notes').innerHTML = notes.map(n=>`
+    <div class="note-item">
+      <div class="note-date">${fmtDateTime(n.created_at)}</div>
+      <div class="note-content">${escapeHtml(n.content)}</div>
+    </div>
+  `).join('');
+}
+
+$('#tm-note-submit').addEventListener('click', async ()=>{
+  const content = $('#tm-note-input').value.trim();
+  if(!content) return;
+  const { error } = await sb.from('task_notes').insert({ task_id: activeTaskId, user_id: currentUser.id, content });
+  if(error){ showToast('เพิ่มโน้ตไม่สำเร็จ: '+error.message); return; }
+  $('#tm-note-input').value = '';
+  const { data } = await sb.from('task_notes').select('*').eq('task_id', activeTaskId).order('created_at',{ascending:false});
+  renderNotes(data);
+  if(data && data.length) latestNoteByTask[activeTaskId] = data[0];
+  if(currentView==='work') renderWorkLists();
+  else if(currentView==='home') renderHome();
+  showToast('เพิ่มโน้ตแล้ว 📝');
+});
+
+$('#tm-delete-btn').addEventListener('click', async ()=>{
+  if(!confirm('ลบงานนี้ทั้งหมด รวมถึงโน้ตทั้งหมดด้วยเลยไหม? ย้อนกลับไม่ได้นะ')) return;
+  const { error } = await sb.from('tasks').delete().eq('id', activeTaskId);
+  if(error){ showToast('ลบไม่สำเร็จ: '+error.message); return; }
+  $('#task-modal').classList.add('hidden');
+  showToast('ลบงานแล้ว');
+  await loadTasks();
+});
+
+// ---------- RENDER: WORK VIEW ----------
+let workSearch = '', workCategoryFilter = '';
+
+function renderWork(){
+  const el = $('#work-view');
+  const cats = new Set(DEFAULT_CATEGORIES);
+  tasksCache.forEach(t=>cats.add(t.category));
+
+  el.innerHTML = `
+    <div class="view-header">
+      <div><h1>Work</h1><div class="view-sub">งานทั้งหมดของคุณ เรียงตามความสำคัญ</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="work-search" placeholder="ค้นหางาน..." value="${escapeHtml(workSearch)}">
+      <select id="work-cat-filter">
+        <option value="">ทุกหมวดหมู่</option>
+        ${[...cats].map(c=>`<option value="${escapeHtml(c)}" ${c===workCategoryFilter?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="work-lists"></div>
+  `;
+
+  $('#work-search').addEventListener('input', (e)=>{ workSearch = e.target.value; renderWorkLists(); });
+  $('#work-cat-filter').addEventListener('change', (e)=>{ workCategoryFilter = e.target.value; renderWorkLists(); });
+
+  renderWorkLists();
+}
+
+function renderWorkLists(){
+  const q = workSearch.trim().toLowerCase();
+  let filtered = tasksCache.filter(t=>{
+    if(q && !t.title.toLowerCase().includes(q)) return false;
+    if(workCategoryFilter && t.category !== workCategoryFilter) return false;
+    return true;
+  });
+
+  const notDone = filtered.filter(t=>t.status!=='เสร็จแล้ว').sort((a,b)=>{
+    if(a.deadline && b.deadline) return new Date(a.deadline)-new Date(b.deadline);
+    if(a.deadline) return -1;
+    if(b.deadline) return 1;
+    return new Date(a.created_at)-new Date(b.created_at);
+  });
+  const done = filtered.filter(t=>t.status==='เสร็จแล้ว').sort((a,b)=> new Date(b.completed_at||b.created_at)-new Date(a.completed_at||a.created_at));
+
+  let html = `<div class="section-title">ยังไม่เสร็จ <span class="count-pill">${notDone.length}</span></div>`;
+  html += notDone.length ? `<div class="task-list">${notDone.map(taskCardHtml).join('')}</div>` : emptyStateHtml('ไม่มีงานค้าง เยี่ยมมาก! 🎉');
+
+  html += `<div class="section-title done">เสร็จแล้ว <span class="count-pill">${done.length}</span></div>`;
+  html += done.length ? `<div class="task-list">${done.map(taskCardHtml).join('')}</div>` : emptyStateHtml('ยังไม่มีงานที่เสร็จในตอนนี้');
+
+  $('#work-lists').innerHTML = html;
+  $all('.task-card').forEach(card=> card.addEventListener('click', ()=>openTaskModal(card.dataset.id)));
+}
+
+function emptyStateHtml(msg){
+  return `<div class="empty-state"><div class="blob-big"></div>${msg}</div>`;
+}
+
+function taskCardHtml(t){
+  const overdue = isOverdue(t);
+  const done = t.status === 'เสร็จแล้ว';
+  const note = latestNoteByTask[t.id];
+  const catColor = colorForCategory(t.category);
+  return `
+    <div class="task-card ${done?'done':''}" data-id="${t.id}">
+      ${moodDot(t)}
+      <div class="task-body">
+        <div class="task-title-row">
+          <span class="task-title ${done?'strike':''}">${escapeHtml(t.title)}</span>
+          <span class="tag tag-cat" style="background:${catColor}22;color:${catColor};">${escapeHtml(t.category)}</span>
+        </div>
+        ${note ? `<div class="task-note-preview"><span class="note-preview-icon">📝</span><span class="note-preview-text">${escapeHtml(note.content)}</span></div>` : ''}
+      </div>
+      <div class="task-side">
+        <span class="status-pill ${STATUS_CLASS[t.status]}">${t.status}</span>
+        ${t.deadline ? `<span class="deadline-badge ${overdue?'overdue':''}">${overdue?'⚠ ':''}${fmtDate(t.deadline)}</span>` : ''}
+        ${(t.links && t.links.length) ? `<span class="link-count-badge">🔗 ${t.links.length}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// ---------- RENDER: HOME VIEW ----------
+function getRangeStart(){
+  const now = new Date();
+  if(homeRange==='month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  if(homeRange==='quarter'){ const q = Math.floor(now.getMonth()/3); return new Date(now.getFullYear(), q*3, 1); }
+  return null; // all time
+}
+
+let trendChartInstance = null;
+
+function renderHome(){
+  const el = $('#home-view');
+  const total = tasksCache.length;
+  const notStarted = tasksCache.filter(t=>t.status==='ยังไม่ทำ').length;
+  const doing = tasksCache.filter(t=>t.status==='กำลังทำ').length;
+  const rangeStart = getRangeStart();
+  const completedInRange = tasksCache.filter(t=> t.status==='เสร็จแล้ว' && t.completed_at && (!rangeStart || new Date(t.completed_at)>=rangeStart));
+  const completedAll = tasksCache.filter(t=>t.status==='เสร็จแล้ว');
+  const completionRate = total ? Math.round((completedAll.length/total)*100) : 0;
+
+  const delta = computePeriodDelta();
+  const compliance = computeDeadlineCompliance();
+  const highImpact = computeHighImpactRate();
+
+  const deltaHtml = delta ? `
+    <div class="stat-delta ${delta.delta>0?'up':delta.delta<0?'down':'flat'}">
+      ${delta.delta>0?'▲':delta.delta<0?'▼':'―'} ${Math.abs(delta.delta)}% จาก${homeRange==='month'?'เดือนก่อน':'ไตรมาสก่อน'}
+    </div>` : '';
+
+  el.innerHTML = `
+    <div class="view-header">
+      <div><h1>Home</h1><div class="view-sub">ภาพรวมงานของคุณ ${currentUser.email.split('@')[0]}</div></div>
+      <div class="header-actions">
+        <div class="range-toggle" id="range-toggle">
+          <button data-r="month" class="${homeRange==='month'?'active':''}">เดือนนี้</button>
+          <button data-r="quarter" class="${homeRange==='quarter'?'active':''}">ไตรมาสนี้</button>
+          <button data-r="all" class="${homeRange==='all'?'active':''}">ทั้งหมด</button>
+        </div>
+        <button type="button" class="btn-export" id="export-csv-btn">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">งานทั้งหมด</div></div>
+      <div class="stat-card accent-mint">
+        <div class="stat-num">${completedInRange.length}</div>
+        <div class="stat-label">เสร็จ (ช่วงที่เลือก)</div>
+        ${deltaHtml}
+      </div>
+      <div class="stat-card accent-purple"><div class="stat-num">${doing}</div><div class="stat-label">กำลังทำ</div></div>
+      <div class="stat-card"><div class="stat-num">${notStarted}</div><div class="stat-label">ยังไม่เริ่ม</div></div>
+      <div class="stat-card"><div class="stat-num">${completionRate}%</div><div class="stat-label">Completion rate</div></div>
+      <div class="stat-card ${compliance && compliance.rate>=80?'accent-mint':''}">
+        <div class="stat-num">${compliance ? compliance.rate+'%' : '–'}</div>
+        <div class="stat-label">ส่งตรงเวลา (Deadline compliance)</div>
+        ${compliance ? `<div class="stat-sub">${compliance.onTime}/${compliance.total} งานที่มีกำหนดส่ง</div>` : '<div class="stat-sub">ยังไม่มีข้อมูล</div>'}
+      </div>
+      <div class="stat-card accent-purple">
+        <div class="stat-num">${highImpact ? highImpact.rate+'%' : '–'}</div>
+        <div class="stat-label">งาน Impact สูงที่เสร็จ</div>
+        ${highImpact ? `<div class="stat-sub">${highImpact.done}/${highImpact.total} งาน (ทั้งหมด)</div>` : '<div class="stat-sub">ยังไม่มีงาน impact สูง</div>'}
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <h3>แนวโน้มงานที่เสร็จ (6 เดือนล่าสุด)</h3>
+      <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+    </div>
+
+    <div class="panel-grid">
+      <div class="panel">
+        <h3>Impact ของงานที่เสร็จ (ช่วงที่เลือก)</h3>
+        ${impactBarsHtml(completedInRange)}
+      </div>
+      <div class="panel">
+        <h3>หมวดหมู่ของงานที่เสร็จ (ช่วงที่เลือก)</h3>
+        ${categoryBarsHtml(completedInRange)}
+      </div>
+    </div>
+
+    <div class="panel-grid">
+      <div class="panel">
+        <h3>ใกล้ครบกำหนด</h3>
+        ${upcomingListHtml()}
+      </div>
+      <div class="panel">
+        <h3>เสร็จล่าสุด</h3>
+        ${recentDoneListHtml()}
+      </div>
+    </div>
+  `;
+
+  $('#range-toggle').addEventListener('click', (e)=>{
+    if(e.target.tagName!=='BUTTON') return;
+    homeRange = e.target.dataset.r;
+    renderHome();
+  });
+  $all('.mini-item').forEach(it=> it.addEventListener('click', ()=>{ switchView('work'); setTimeout(()=>openTaskModal(it.dataset.id),50); }));
+  $('#export-csv-btn').addEventListener('click', exportSummaryCSV);
+
+  renderTrendChart();
+}
+
+// ---------- HOME ANALYTICS HELPERS ----------
+function computePeriodDelta(){
+  if(homeRange==='all') return null;
+  const now = new Date();
+  let curStart, curEnd, prevStart, prevEnd;
+  if(homeRange==='month'){
+    curStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    curEnd = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    prevStart = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    prevEnd = curStart;
+  } else {
+    const q = Math.floor(now.getMonth()/3);
+    curStart = new Date(now.getFullYear(), q*3, 1);
+    curEnd = new Date(now.getFullYear(), q*3+3, 1);
+    prevStart = new Date(now.getFullYear(), q*3-3, 1);
+    prevEnd = curStart;
+  }
+  const countIn = (s,e)=> tasksCache.filter(t=> t.status==='เสร็จแล้ว' && t.completed_at && new Date(t.completed_at)>=s && new Date(t.completed_at)<e).length;
+  const cur = countIn(curStart, curEnd);
+  const prev = countIn(prevStart, prevEnd);
+  let delta;
+  if(prev===0) delta = cur>0 ? 100 : 0;
+  else delta = Math.round(((cur-prev)/prev)*100);
+  return { cur, prev, delta };
+}
+
+function computeDeadlineCompliance(){
+  const withDeadline = tasksCache.filter(t=> t.status==='เสร็จแล้ว' && t.completed_at && (t.deadline_at_completion || t.deadline));
+  if(!withDeadline.length) return null;
+  let onTime = 0;
+  withDeadline.forEach(t=>{
+    const dl = t.deadline_at_completion || t.deadline;
+    const completedDate = new Date(t.completed_at); completedDate.setHours(0,0,0,0);
+    const deadlineDate = new Date(dl); deadlineDate.setHours(0,0,0,0);
+    if(completedDate <= deadlineDate) onTime++;
+  });
+  return { rate: Math.round((onTime/withDeadline.length)*100), onTime, total: withDeadline.length };
+}
+
+function computeHighImpactRate(){
+  const highImpact = tasksCache.filter(t=>t.impact==='สูง');
+  if(!highImpact.length) return null;
+  const done = highImpact.filter(t=>t.status==='เสร็จแล้ว').length;
+  return { rate: Math.round((done/highImpact.length)*100), done, total: highImpact.length };
+}
+
+function computeMonthlyTrend(monthsBack){
+  const now = new Date();
+  const buckets = [];
+  for(let i=monthsBack-1; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    buckets.push({ key: d.getFullYear()+'-'+d.getMonth(), label: d.toLocaleDateString('th-TH',{month:'short',year:'2-digit'}), count:0 });
+  }
+  tasksCache.forEach(t=>{
+    if(t.status==='เสร็จแล้ว' && t.completed_at){
+      const d = new Date(t.completed_at);
+      const key = d.getFullYear()+'-'+d.getMonth();
+      const b = buckets.find(x=>x.key===key);
+      if(b) b.count++;
+    }
+  });
+  return { labels: buckets.map(b=>b.label), data: buckets.map(b=>b.count) };
+}
+
+function renderTrendChart(){
+  const canvas = document.getElementById('trend-chart');
+  if(!canvas || typeof Chart==='undefined') return;
+  const { labels, data } = computeMonthlyTrend(6);
+  if(trendChartInstance){ trendChartInstance.destroy(); trendChartInstance = null; }
+  trendChartInstance = new Chart(canvas, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'งานที่เสร็จ', data, backgroundColor:'#7C6FFF', borderRadius:6, maxBarThickness:36 }] },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=> ctx.parsed.y + ' งาน' } } },
+      scales:{
+        y:{ beginAtZero:true, ticks:{ stepSize:1, precision:0, color:'#8A84A0' }, grid:{ color:'#E3E0F5' } },
+        x:{ ticks:{ color:'#8A84A0' }, grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function exportSummaryCSV(){
+  const rangeStart = getRangeStart();
+  const list = tasksCache.filter(t=>{
+    if(!rangeStart) return true;
+    const refDate = t.status==='เสร็จแล้ว' ? t.completed_at : t.created_at;
+    return refDate && new Date(refDate) >= rangeStart;
+  });
+  const rows = [['ชื่องาน','หมวดหมู่','สถานะ','urgency','Impact','Deadline','วันที่เสร็จ','วันที่สร้าง']];
+  list.forEach(t=> rows.push([
+    t.title, t.category, t.status, t.urgency, t.impact,
+    t.deadline || '', t.completed_at ? fmtDate(t.completed_at) : '', fmtDate(t.created_at)
+  ]));
+  const csv = rows.map(r=> r.map(v=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dodee-summary-${homeRange}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('ดาวน์โหลดสรุปแล้ว 📄');
+}
+
+function impactBarsHtml(list){
+  if(!list.length) return '<div class="empty-note">ยังไม่มีข้อมูลในช่วงนี้</div>';
+  const levels = ['สูง','กลาง','ต่ำ'];
+  const colors = { 'สูง':'var(--purple)', 'กลาง':'var(--yellow)', 'ต่ำ':'var(--mint)' };
+  const max = Math.max(...levels.map(l=> list.filter(t=>t.impact===l).length), 1);
+  return levels.map(l=>{
+    const c = list.filter(t=>t.impact===l).length;
+    return `<div class="bar-row">
+      <div class="bar-label"><span>${l}</span><span>${c}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c/max)*100}%;background:${colors[l]};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function categoryBarsHtml(list){
+  if(!list.length) return '<div class="empty-note">ยังไม่มีข้อมูลในช่วงนี้</div>';
+  const counts = {};
+  list.forEach(t=> counts[t.category] = (counts[t.category]||0)+1);
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const max = Math.max(...entries.map(e=>e[1]), 1);
+  return entries.map(([cat,c])=>`
+    <div class="bar-row">
+      <div class="bar-label"><span>${escapeHtml(cat)}</span><span>${c}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c/max)*100}%;background:var(--pink);"></div></div>
+    </div>
+  `).join('');
+}
+
+function upcomingListHtml(){
+  const list = tasksCache.filter(t=>t.status!=='เสร็จแล้ว' && t.deadline).sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)).slice(0,5);
+  if(!list.length) return '<div class="empty-note">ไม่มีงานที่ใกล้ครบกำหนด</div>';
+  return `<div class="mini-list">${list.map(t=>`
+    <div class="mini-item" data-id="${t.id}">
+      ${moodDot(t)}
+      <span class="mtitle">${escapeHtml(t.title)}</span>
+      <span class="mmeta ${isOverdue(t)?'overdue':''}">${fmtDate(t.deadline)}</span>
+    </div>
+  `).join('')}</div>`;
+}
+
+function recentDoneListHtml(){
+  const list = tasksCache.filter(t=>t.status==='เสร็จแล้ว' && t.completed_at).sort((a,b)=>new Date(b.completed_at)-new Date(a.completed_at)).slice(0,5);
+  if(!list.length) return '<div class="empty-note">ยังไม่มีงานที่เสร็จ</div>';
+  return `<div class="mini-list">${list.map(t=>`
+    <div class="mini-item" data-id="${t.id}">
+      ${moodDot(t)}
+      <span class="mtitle">${escapeHtml(t.title)}</span>
+      <span class="mmeta">${fmtDate(t.completed_at)}</span>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ---------- RENDER: SETTINGS VIEW ----------
+function renderSettings(){
+  const el = $('#settings-view');
+  el.innerHTML = `
+    <div class="view-header">
+      <div><h1>Settings</h1><div class="view-sub">จัดการหมวดหมู่งานและบัญชีของคุณ</div></div>
+    </div>
+
+    <div class="settings-panel">
+      <h3>หมวดหมู่งาน</h3>
+      <p class="settings-sub">แก้ชื่อ ลบ หรือเพิ่มหมวดหมู่ใหม่ได้ตามต้องการ (แก้ชื่อจะอัปเดตงานเดิมที่ใช้หมวดนี้ให้ด้วย)</p>
+      <div id="cat-list"></div>
+      <div class="cat-add-row">
+        <input type="text" id="cat-new-input" placeholder="เพิ่มหมวดหมู่ใหม่...">
+        <button type="button" id="cat-add-btn">เพิ่ม</button>
+      </div>
+    </div>
+
+    <div class="settings-panel">
+      <h3>เปลี่ยนรหัสผ่าน</h3>
+      <p class="settings-sub">ตั้งรหัสผ่านใหม่สำหรับบัญชี ${escapeHtml(currentUser.email)}</p>
+      <form id="pw-form">
+        <div class="form-row">
+          <label>รหัสผ่านใหม่</label>
+          <input type="password" id="pw-new" minlength="6" required placeholder="อย่างน้อย 6 ตัวอักษร">
+        </div>
+        <div class="form-row">
+          <label>ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" id="pw-confirm" minlength="6" required placeholder="พิมพ์อีกครั้ง">
+        </div>
+        <div id="pw-message"></div>
+        <button type="submit" class="btn-primary">บันทึกรหัสผ่านใหม่</button>
+      </form>
+    </div>
+  `;
+  renderCatList();
+
+  $('#cat-add-btn').addEventListener('click', ()=>{
+    const input = $('#cat-new-input');
+    const val = input.value.trim();
+    if(!val) return;
+    if(userCategories.includes(val)){ showToast('มีหมวดหมู่นี้อยู่แล้ว'); return; }
+    saveCategories([...userCategories, val]);
+    input.value = '';
+    renderCatList();
+    showToast('เพิ่มหมวดหมู่แล้ว');
+  });
+
+  $('#pw-form').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const pw1 = $('#pw-new').value, pw2 = $('#pw-confirm').value;
+    $('#pw-message').innerHTML = '';
+    if(pw1 !== pw2){ $('#pw-message').innerHTML = '<div class="auth-error">รหัสผ่านไม่ตรงกัน</div>'; return; }
+    const { error } = await sb.auth.updateUser({ password: pw1 });
+    if(error){ $('#pw-message').innerHTML = `<div class="auth-error">${error.message}</div>`; return; }
+    $('#pw-message').innerHTML = '<div class="auth-hint">เปลี่ยนรหัสผ่านสำเร็จแล้ว ✓</div>';
+    $('#pw-form').reset();
+  });
+}
+
+function renderCatList(){
+  $('#cat-list').innerHTML = userCategories.map((c,i)=>`
+    <div class="cat-row" data-idx="${i}">
+      <input type="color" class="cat-color-input" value="${colorForCategory(c)}" data-cat="${escapeHtml(c)}">
+      <input type="text" value="${escapeHtml(c)}" data-orig="${escapeHtml(c)}">
+      <button type="button" class="cat-icon-btn cat-delete" title="ลบ">🗑</button>
+    </div>
+  `).join('');
+
+  $all('.cat-color-input').forEach(inp=>{
+    inp.addEventListener('input', (e)=> saveCategoryColor(e.target.dataset.cat, e.target.value));
+  });
+
+  $all('.cat-row input[type=text]').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const newVal = e.target.value.trim();
+      const oldVal = e.target.dataset.orig;
+      if(!newVal || newVal===oldVal) { e.target.value = oldVal; return; }
+      const idx = userCategories.indexOf(oldVal);
+      if(idx===-1) return;
+      const updated = [...userCategories];
+      updated[idx] = newVal;
+      await saveCategories(updated);
+      if(categoryColors[oldVal]){
+        const newColors = {...categoryColors};
+        newColors[newVal] = newColors[oldVal];
+        delete newColors[oldVal];
+        categoryColors = newColors;
+        await sb.from('app_settings').update({ category_colors: categoryColors }).eq('user_id', currentUser.id);
+      }
+      const { error } = await sb.from('tasks').update({category:newVal}).eq('user_id',currentUser.id).eq('category',oldVal);
+      if(!error){
+        tasksCache.forEach(t=>{ if(t.category===oldVal) t.category = newVal; });
+        showToast('อัปเดตหมวดหมู่แล้ว');
+      }
+      e.target.dataset.orig = newVal;
+      renderCatList();
+    });
+  });
+
+  $all('.cat-delete').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const row = btn.closest('.cat-row');
+      const val = row.querySelector('input[type=text]').dataset.orig;
+      if(!confirm(`ลบหมวดหมู่ "${val}" ออกจากรายการ? (งานเดิมที่ใช้หมวดนี้จะยังอยู่ ไม่หาย)`)) return;
+      saveCategories(userCategories.filter(c=>c!==val));
+      renderCatList();
+      showToast('ลบหมวดหมู่แล้ว');
+    });
+  });
+}
+
+// ---------- init ----------
+(async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    $('#app-screen').classList.add('hidden');
+    $('#auth-screen').classList.remove('hidden');
+  }
+})();
+</script>
+</body>
+</html>
