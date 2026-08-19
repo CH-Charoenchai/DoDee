@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DoDee — จัดการงานประจำวัน</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='100' y2='100'%3E%3Cstop offset='0' stop-color='%23FF8FA3'/%3E%3Cstop offset='1' stop-color='%237C6FFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 6C71 6 92 19 94 43C96 66 79 93 52 94C25 95 6 74 5 50C4 26 27 6 50 6Z' fill='url(%23g)'/%3E%3Ccircle cx='38' cy='46' r='6' fill='white'/%3E%3Ccircle cx='40' cy='44' r='2.6' fill='%23362F47'/%3E%3Ccircle cx='66' cy='46' r='6' fill='white'/%3E%3Ccircle cx='68' cy='44' r='2.6' fill='%23362F47'/%3E%3Cpath d='M36 62c6 9 24 9 30 0' stroke='%23362F47' stroke-width='4.5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='27' cy='58' r='5' fill='%23FF6B4A' opacity='.45'/%3E%3Ccircle cx='75' cy='58' r='5' fill='%23FF6B4A' opacity='.45'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -34,6 +35,7 @@
     --font-display:'Fredoka',sans-serif;
     --font-body:'Plus Jakarta Sans',sans-serif;
     --font-mono:'Space Mono',monospace;
+    --mascot-svg:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='100' y2='100'%3E%3Cstop offset='0' stop-color='%23FF8FA3'/%3E%3Cstop offset='1' stop-color='%237C6FFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 6C71 6 92 19 94 43C96 66 79 93 52 94C25 95 6 74 5 50C4 26 27 6 50 6Z' fill='url(%23g)'/%3E%3Ccircle cx='38' cy='46' r='6' fill='white'/%3E%3Ccircle cx='40' cy='44' r='2.6' fill='%23362F47'/%3E%3Ccircle cx='66' cy='46' r='6' fill='white'/%3E%3Ccircle cx='68' cy='44' r='2.6' fill='%23362F47'/%3E%3Cpath d='M36 62c6 9 24 9 30 0' stroke='%23362F47' stroke-width='4.5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='27' cy='58' r='5' fill='%23FF6B4A' opacity='.45'/%3E%3Ccircle cx='75' cy='58' r='5' fill='%23FF6B4A' opacity='.45'/%3E%3C/svg%3E");
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
@@ -46,7 +48,7 @@
   /* ---------- AUTH SCREEN ---------- */
   #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
   .auth-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);padding:40px 36px;width:100%;max-width:380px;text-align:center;}
-  .auth-blob{width:56px;height:56px;margin:0 auto 12px;border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;background:linear-gradient(135deg,var(--pink),var(--purple));}
+  .auth-blob{width:64px;height:64px;margin:0 auto 12px;background:var(--mascot-svg);background-size:contain;background-repeat:no-repeat;}
   .auth-card h1{font-size:26px;margin:0 0 4px;color:var(--ink);}
   .auth-sub{color:var(--ink-soft);font-size:14px;margin:0 0 24px;}
   .field{text-align:left;margin-bottom:14px;}
@@ -64,8 +66,28 @@
   /* ---------- APP SHELL ---------- */
   #app-screen{display:flex;min-height:100vh;}
   .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .shortcut-section{margin-bottom:20px;padding:0 8px;}
+  .shortcut-section-label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;padding:0 2px;}
+  .shortcut-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+  .shortcut-item{position:relative;}
+  .shortcut-btn{aspect-ratio:1;width:100%;border-radius:9px;background:var(--surface-soft);display:flex;align-items:center;justify-content:center;padding:5px;transition:transform .12s,background .12s;}
+  .shortcut-btn:hover{background:var(--purple-soft);transform:translateY(-1px);}
+  .shortcut-btn img{width:60%;height:60%;object-fit:contain;display:block;}
+  .shortcut-add-btn{border:1.5px dashed var(--border);color:var(--ink-soft);font-size:14px;font-weight:700;background:var(--surface);}
+  .shortcut-add-btn:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-soft);}
+  .shortcut-remove{display:none;position:absolute;top:-4px;right:-4px;width:15px;height:15px;border-radius:50%;background:var(--danger);color:#fff;font-size:8px;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .shortcut-item:hover .shortcut-remove{display:flex;}
+  .shortcut-upload{display:none;position:absolute;bottom:-4px;right:-4px;width:15px;height:15px;border-radius:50%;background:var(--purple);color:#fff;font-size:8px;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .shortcut-item:hover .shortcut-upload{display:flex;}
+  .shortcut-add-form{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
+  .shortcut-add-form input{width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-soft);font-size:12.5px;outline:none;}
+  .shortcut-add-form input:focus{border-color:var(--purple);}
+  .shortcut-add-actions{display:flex;gap:6px;}
+  .shortcut-add-actions button{flex:1;padding:7px 0;border-radius:var(--radius-sm);font-weight:700;font-size:12px;}
+  .shortcut-add-actions #shortcut-add-submit{background:var(--purple);color:#fff;}
+  .shortcut-add-actions .link-cancel-btn{background:var(--surface);color:var(--ink-soft);border:1.5px solid var(--border);}
   .brand{font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:28px;padding:0 8px;}
-  .brand-dot{width:14px;height:14px;border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;background:linear-gradient(135deg,var(--pink),var(--purple));}
+  .brand-dot{width:24px;height:24px;flex-shrink:0;background:var(--mascot-svg);background-size:contain;background-repeat:no-repeat;}
   .nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-sm);color:var(--ink-soft);font-weight:600;font-size:14.5px;margin-bottom:4px;background:none;width:100%;text-align:left;transition:background .12s,color .12s;}
   .nav-item:hover{background:var(--surface-soft);color:var(--ink);}
   .nav-item.active{background:var(--purple-soft);color:var(--purple);}
@@ -182,6 +204,7 @@
   /* ---------- MODALS ---------- */
   .modal-overlay{position:fixed;inset:0;background:rgba(54,47,71,.42);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
   .modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-pop);}
+  #task-modal .modal{max-width:760px;}
   .modal-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 12px;position:sticky;top:0;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:2;}
   .modal-head h2{font-size:19px;margin:0;}
   .modal-close{background:var(--surface-soft);color:var(--ink-soft);width:30px;height:30px;border-radius:50%;font-size:15px;display:flex;align-items:center;justify-content:center;}
@@ -207,7 +230,16 @@
 
   .notes-timeline{display:flex;flex-direction:column;gap:10px;margin:10px 0 16px;max-height:260px;overflow-y:auto;padding-right:4px;}
   .note-item{background:var(--surface-soft);border-radius:var(--radius-sm);padding:10px 13px;}
-  .note-date{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .note-date-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}
+  .note-date-left{display:flex;align-items:center;gap:6px;}
+  .note-date{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);}
+  .note-edit-btn{flex-shrink:0;background:none;color:var(--ink-soft);opacity:.55;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;}
+  .note-edit-btn:hover{opacity:1;background:var(--purple-soft);color:var(--purple);}
+  .note-edit-wrap textarea{width:100%;min-height:60px;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--purple);background:var(--surface);font-size:13.5px;color:var(--ink);outline:none;resize:vertical;font-family:inherit;}
+  .note-edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px;}
+  .note-edit-actions button{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;}
+  .note-edit-cancel{background:var(--surface);color:var(--ink-soft);border:1.5px solid var(--border);}
+  .note-edit-save{background:var(--purple);color:#fff;}
   .note-content{font-size:13.5px;line-height:1.5;white-space:pre-wrap;}
   .note-add-row{display:flex;gap:8px;}
   .note-add-row textarea{flex:1;min-height:44px;}
@@ -219,6 +251,9 @@
   .links-list{display:flex;flex-direction:column;gap:6px;margin:8px 0 10px;}
   .link-item{display:flex;align-items:center;gap:8px;background:var(--surface-soft);border-radius:var(--radius-sm);padding:8px 12px;}
   .link-item .link-icon{flex-shrink:0;font-size:13px;}
+  .link-item .link-favicon{flex-shrink:0;width:15px;height:15px;border-radius:3px;object-fit:contain;cursor:pointer;}
+  .link-add-toggle{display:inline-flex;align-items:center;gap:6px;background:var(--surface-soft);border:1.5px dashed var(--border);color:var(--ink-soft);font-weight:700;font-size:13px;padding:8px 14px;border-radius:999px;}
+  .link-add-toggle:hover{border-color:var(--purple);color:var(--purple);}
   .link-item a{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--purple);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .link-item a:hover{text-decoration:underline;}
   .link-remove-btn{flex-shrink:0;background:none;color:var(--ink-soft);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
@@ -227,6 +262,8 @@
   .link-add-row input{flex:1;min-width:110px;padding:9px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);font-size:13px;outline:none;}
   .link-add-row input:focus{border-color:var(--purple);}
   .link-add-row button{background:var(--purple);color:#fff;padding:0 16px;border-radius:var(--radius-sm);font-weight:700;font-size:13px;flex-shrink:0;}
+  .link-cancel-btn{background:var(--surface-soft) !important;color:var(--ink-soft) !important;border:1.5px solid var(--border);padding:0 12px !important;}
+  .link-cancel-btn:hover{background:var(--coral-soft) !important;color:var(--coral) !important;}
   .link-count-badge{font-family:var(--font-mono);font-size:11px;color:var(--purple);display:inline-flex;align-items:center;gap:3px;}
 
   #toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;}
@@ -278,6 +315,18 @@
     <button class="nav-item active" data-view="home"><span class="nav-icon">🏠</span>Home</button>
     <button class="nav-item" data-view="work"><span class="nav-icon">📋</span>Work</button>
     <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span>Settings</button>
+    <div class="shortcut-section">
+      <div class="shortcut-section-label">Shortcuts</div>
+      <div class="shortcut-grid" id="shortcut-grid"></div>
+      <div class="shortcut-add-form hidden" id="shortcut-add-form">
+        <input type="text" id="shortcut-url-input" placeholder="วางลิงก์ เช่น https://...">
+        <input type="text" id="shortcut-label-input" placeholder="ชื่อ (ไม่บังคับ)">
+        <div class="shortcut-add-actions">
+          <button type="button" id="shortcut-add-cancel" class="link-cancel-btn">ยกเลิก</button>
+          <button type="button" id="shortcut-add-submit">เพิ่ม</button>
+        </div>
+      </div>
+    </div>
     <div class="sidebar-footer">
       <div class="user-email" id="sidebar-email"></div>
       <button class="logout-btn" id="logout-btn">ออกจากระบบ</button>
@@ -356,7 +405,14 @@
 
 <div class="modal-overlay hidden" id="task-modal">
   <div class="modal">
-    <div class="modal-head"><h2 id="tm-title" style="word-break:break-word;"></h2><button class="modal-close" data-close="task-modal">✕</button></div>
+    <div class="modal-head">
+      <div class="tm-title-wrap" id="tm-title-wrap" style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+        <button type="button" class="modal-close" id="tm-title-edit-btn" title="แก้ชื่องาน" style="flex-shrink:0;">✎</button>
+        <h2 id="tm-title" style="word-break:break-word;margin:0;"></h2>
+        <input type="text" id="tm-title-input" class="hidden" style="font-family:var(--font-display);font-size:19px;border:1.5px solid var(--purple);border-radius:var(--radius-sm);padding:5px 10px;background:var(--surface-soft);color:var(--ink);outline:none;flex:1;min-width:0;">
+      </div>
+      <button class="modal-close" data-close="task-modal">✕</button>
+    </div>
     <div class="modal-body">
       <div class="form-row">
         <label>สถานะ</label>
@@ -399,9 +455,11 @@
       <div class="form-row" style="margin-top:6px;">
         <label>ลิงก์ที่เกี่ยวข้อง</label>
         <div class="links-list" id="tm-links"></div>
-        <div class="link-add-row">
+        <button type="button" class="link-add-toggle" id="tm-link-add-toggle">+ เพิ่มลิงก์</button>
+        <div class="link-add-row hidden" id="tm-link-add-row">
           <input type="text" id="tm-link-url" placeholder="วางลิงก์ เช่น https://...">
-          <input type="text" id="tm-link-label" placeholder="ชื่อลิงก์ (ไม่บังคับ)">
+          <input type="text" id="tm-link-label" placeholder="ชื่อ (ไม่บังคับ)">
+          <button type="button" id="tm-link-cancel" class="link-cancel-btn" title="ยกเลิก">ยกเลิก</button>
           <button type="button" id="tm-link-submit">เพิ่ม</button>
         </div>
       </div>
@@ -422,13 +480,14 @@
   </div>
 </div>
 
+<input type="file" id="icon-upload-input" accept="image/*" class="hidden">
+
 <div id="toast-container"></div>
 
 <script>
 const SUPABASE_URL = "https://tawirbrjcmvmtnmnzhld.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhd2lyYnJqY212bXRubW56aGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NDE2MzAsImV4cCI6MjEwMjUxNzYzMH0.4qsbaq4ViJaW-3dP0IXA-MEqEl_ELob-cgTAQX3IHfw";
 
-// custom storage adapter using window.storage instead of localStorage
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
@@ -442,6 +501,9 @@ let homeRange = 'month'; // month | quarter | all
 const DEFAULT_CATEGORIES = ['Project','Meeting','Follow-up','Admin'];
 let userCategories = [...DEFAULT_CATEGORIES];
 let categoryColors = {};
+let userShortcuts = [];
+const MAX_SHORTCUTS = 8;
+const MAX_ICON_BYTES = 300 * 1024; // 300KB cap on custom uploaded icons
 const DEFAULT_CATEGORY_COLORS = { 'Project':'#7C6FFF', 'Meeting':'#FF8FA3', 'Follow-up':'#FFB84D', 'Admin':'#2FBFAE' };
 function colorForCategory(cat){
   return categoryColors[cat] || DEFAULT_CATEGORY_COLORS[cat] || '#8A84A0';
@@ -525,6 +587,113 @@ async function handleLogout(){
 }
 $('#logout-btn').addEventListener('click', handleLogout);
 $('#logout-btn-mobile').addEventListener('click', handleLogout);
+
+// ---------- ICON UPLOAD (shared by shortcuts + task links) ----------
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = ()=>reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    r.readAsDataURL(file);
+  });
+}
+
+let iconUploadCallback = null;
+function requestIconUpload(callback){
+  iconUploadCallback = callback;
+  $('#icon-upload-input').value = '';
+  $('#icon-upload-input').click();
+}
+$('#icon-upload-input').addEventListener('change', async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('เลือกไฟล์รูปภาพเท่านั้นนะ'); return; }
+  if(file.size > MAX_ICON_BYTES){ showToast('ไฟล์ใหญ่เกินไป (จำกัด 300KB)'); return; }
+  try{
+    const dataUrl = await readFileAsDataURL(file);
+    if(iconUploadCallback) iconUploadCallback(dataUrl);
+  } catch(err){
+    showToast('อัปโหลดไอคอนไม่สำเร็จ');
+  }
+  iconUploadCallback = null;
+});
+
+// ---------- SIDEBAR SHORTCUTS ----------
+function shortcutFaviconUrl(url){
+  try{
+    const host = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?sz=64&domain=${host}`;
+  } catch(e){ return ''; }
+}
+
+function renderShortcuts(){
+  const grid = $('#shortcut-grid');
+  if(!grid) return;
+  let html = userShortcuts.map((s,i)=>`
+    <div class="shortcut-item">
+      <a class="shortcut-btn" href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.label || s.url)}">
+        <img src="${escapeHtml(s.icon || shortcutFaviconUrl(s.url))}" alt="" onerror="this.style.display='none'">
+      </a>
+      <button type="button" class="shortcut-upload" data-idx="${i}" title="อัปโหลดไอคอนเอง">⇧</button>
+      <button type="button" class="shortcut-remove" data-idx="${i}" title="ลบ">✕</button>
+    </div>
+  `).join('');
+  if(userShortcuts.length < MAX_SHORTCUTS){
+    html += `<button type="button" class="shortcut-btn shortcut-add-btn" id="shortcut-add-btn" title="เพิ่ม shortcut">+</button>`;
+  }
+  grid.innerHTML = html;
+
+  $all('.shortcut-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx, 10);
+      const updated = [...userShortcuts];
+      updated.splice(idx, 1);
+      saveShortcuts(updated);
+    });
+  });
+  $all('.shortcut-upload').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx, 10);
+      requestIconUpload((dataUrl)=>{
+        const updated = [...userShortcuts];
+        updated[idx] = { ...updated[idx], icon: dataUrl };
+        saveShortcuts(updated);
+        showToast('อัปเดตไอคอนแล้ว ✓');
+      });
+    });
+  });
+  const addBtn = $('#shortcut-add-btn');
+  if(addBtn) addBtn.addEventListener('click', showShortcutAddForm);
+}
+
+function showShortcutAddForm(){
+  $('#shortcut-add-form').classList.remove('hidden');
+  $('#shortcut-url-input').value = '';
+  $('#shortcut-label-input').value = '';
+  $('#shortcut-url-input').focus();
+}
+function hideShortcutAddForm(){
+  $('#shortcut-add-form').classList.add('hidden');
+  renderShortcuts();
+}
+async function saveShortcuts(list){
+  userShortcuts = list;
+  const { error } = await sb.from('app_settings').update({ shortcuts: list, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+  if(error){ showToast('บันทึก shortcut ไม่สำเร็จ: '+error.message); return; }
+  renderShortcuts();
+}
+function addShortcutFromInputs(){
+  if(userShortcuts.length >= MAX_SHORTCUTS) return;
+  const urlRaw = $('#shortcut-url-input').value.trim();
+  const label = $('#shortcut-label-input').value.trim();
+  if(!urlRaw) return;
+  saveShortcuts([...userShortcuts, { url: normalizeUrl(urlRaw), label }]);
+  hideShortcutAddForm();
+}
+$('#shortcut-add-submit').addEventListener('click', addShortcutFromInputs);
+$('#shortcut-add-cancel').addEventListener('click', hideShortcutAddForm);
+$('#shortcut-url-input').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addShortcutFromInputs(); } if(e.key==='Escape'){ e.preventDefault(); hideShortcutAddForm(); } });
+$('#shortcut-label-input').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addShortcutFromInputs(); } if(e.key==='Escape'){ e.preventDefault(); hideShortcutAddForm(); } });
 
 sb.auth.onAuthStateChange((event, session)=>{
   if(session && session.user){
@@ -628,13 +797,15 @@ async function loadSettings(){
   const { data, error } = await sb.from('app_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
   if(error){ console.error(error); return; }
   if(!data){
-    const { data: created, error: insErr } = await sb.from('app_settings').insert({ user_id: currentUser.id, categories: DEFAULT_CATEGORIES, category_colors: DEFAULT_CATEGORY_COLORS }).select().single();
-    if(!insErr && created){ userCategories = created.categories; categoryColors = created.category_colors || {}; }
+    const { data: created, error: insErr } = await sb.from('app_settings').insert({ user_id: currentUser.id, categories: DEFAULT_CATEGORIES, category_colors: DEFAULT_CATEGORY_COLORS, shortcuts: [] }).select().single();
+    if(!insErr && created){ userCategories = created.categories; categoryColors = created.category_colors || {}; userShortcuts = created.shortcuts || []; }
   } else {
     userCategories = data.categories && data.categories.length ? data.categories : [...DEFAULT_CATEGORIES];
     categoryColors = data.category_colors || {};
+    userShortcuts = data.shortcuts || [];
   }
   updateCategoryList();
+  renderShortcuts();
   if(currentView==='settings') renderSettings();
 }
 
@@ -737,6 +908,28 @@ async function updateTaskField(field, value, extra){
   else if(currentView==='home') renderHome();
 }
 
+$('#tm-title-edit-btn').addEventListener('click', ()=>{
+  $('#tm-title').classList.add('hidden');
+  $('#tm-title-input').classList.remove('hidden');
+  $('#tm-title-input').value = $('#tm-title').textContent;
+  $('#tm-title-input').focus();
+  $('#tm-title-input').select();
+});
+async function saveTitleEdit(){
+  const newTitle = $('#tm-title-input').value.trim();
+  if(newTitle && newTitle !== $('#tm-title').textContent){
+    $('#tm-title').textContent = newTitle;
+    await updateTaskField('title', newTitle);
+  }
+  $('#tm-title').classList.remove('hidden');
+  $('#tm-title-input').classList.add('hidden');
+}
+$('#tm-title-input').addEventListener('blur', saveTitleEdit);
+$('#tm-title-input').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); $('#tm-title-input').blur(); }
+  if(e.key==='Escape'){ e.preventDefault(); $('#tm-title-input').value = $('#tm-title').textContent; $('#tm-title-input').blur(); }
+});
+
 wireCategorySelect($('#tm-category'), $('#tm-category-new'), (val)=>{ updateTaskField('category', val || 'Project'); });
 $('#tm-deadline').addEventListener('change', (e)=>updateTaskField('deadline', e.target.value || null));
 $('#tm-urgency').addEventListener('change', (e)=>updateTaskField('urgency', e.target.value));
@@ -752,6 +945,13 @@ function normalizeUrl(raw){
   return url;
 }
 
+function faviconForUrl(url){
+  try{
+    const host = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?sz=64&domain=${host}`;
+  } catch(e){ return ''; }
+}
+
 function renderLinks(){
   if(!tmLinks.length){
     $('#tm-links').innerHTML = '<div class="empty-note">ยังไม่มีลิงก์ เพิ่มลิงก์ที่เกี่ยวข้องได้เลย</div>';
@@ -759,11 +959,22 @@ function renderLinks(){
   }
   $('#tm-links').innerHTML = tmLinks.map((l,i)=>`
     <div class="link-item">
-      <span class="link-icon">🔗</span>
+      <img class="link-favicon" src="${escapeHtml(l.icon || faviconForUrl(l.url))}" alt="" title="แตะเพื่ออัปโหลดไอคอนเอง" data-idx="${i}" onerror="this.style.display='none'">
       <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.label || l.url)}</a>
       <button type="button" class="link-remove-btn" data-idx="${i}" title="ลบลิงก์">✕</button>
     </div>
   `).join('');
+  $all('.link-favicon').forEach(img=>{
+    img.addEventListener('click', ()=>{
+      const idx = parseInt(img.dataset.idx, 10);
+      requestIconUpload((dataUrl)=>{
+        tmLinks[idx] = { ...tmLinks[idx], icon: dataUrl };
+        renderLinks();
+        updateTaskField('links', tmLinks);
+        showToast('อัปเดตไอคอนแล้ว ✓');
+      });
+    });
+  });
   $all('.link-remove-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.idx, 10);
@@ -774,19 +985,32 @@ function renderLinks(){
   });
 }
 
+function showLinkAddRow(){
+  $('#tm-link-add-row').classList.remove('hidden');
+  $('#tm-link-add-toggle').classList.add('hidden');
+  $('#tm-link-url').focus();
+}
+function hideLinkAddRow(){
+  $('#tm-link-add-row').classList.add('hidden');
+  $('#tm-link-add-toggle').classList.remove('hidden');
+  $('#tm-link-url').value = '';
+  $('#tm-link-label').value = '';
+}
+$('#tm-link-add-toggle').addEventListener('click', showLinkAddRow);
+
 function addLinkFromInputs(){
   const urlRaw = $('#tm-link-url').value.trim();
   const label = $('#tm-link-label').value.trim();
   if(!urlRaw) return;
   tmLinks.push({ url: normalizeUrl(urlRaw), label });
-  $('#tm-link-url').value = '';
-  $('#tm-link-label').value = '';
   renderLinks();
   updateTaskField('links', tmLinks);
+  hideLinkAddRow();
 }
 
 $('#tm-link-submit').addEventListener('click', addLinkFromInputs);
-$('#tm-link-url').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addLinkFromInputs(); } });
+$('#tm-link-cancel').addEventListener('click', hideLinkAddRow);
+$('#tm-link-url').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addLinkFromInputs(); } if(e.key==='Escape'){ e.preventDefault(); hideLinkAddRow(); } });
 $('#tm-link-label').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addLinkFromInputs(); } });
 
 async function openTaskModal(taskId){
@@ -794,6 +1018,9 @@ async function openTaskModal(taskId){
   const t = tasksCache.find(x=>x.id===taskId);
   if(!t) return;
   $('#tm-title').textContent = t.title;
+  $('#tm-title').classList.remove('hidden');
+  $('#tm-title-input').classList.add('hidden');
+  $('#tm-title-input').value = t.title;
   $('#tm-category').innerHTML = categoryOptionsHtml(t.category);
   $('#tm-category-new').classList.add('hidden');
   $('#tm-deadline').value = t.deadline || '';
@@ -802,8 +1029,7 @@ async function openTaskModal(taskId){
   tmStatus = t.status;
   $all('#tm-status-group button').forEach(b=>b.classList.toggle('active', b.dataset.val===t.status));
   tmLinks = Array.isArray(t.links) ? [...t.links] : [];
-  $('#tm-link-url').value = '';
-  $('#tm-link-label').value = '';
+  hideLinkAddRow();
   renderLinks();
   $('#tm-note-input').value = '';
   $('#tm-notes').innerHTML = '<div class="empty-note">กำลังโหลด...</div>';
@@ -814,17 +1040,58 @@ async function openTaskModal(taskId){
   renderNotes(data);
 }
 
+let currentNotesCache = [];
+
 function renderNotes(notes){
-  if(!notes || notes.length===0){
+  currentNotesCache = notes || [];
+  if(!currentNotesCache.length){
     $('#tm-notes').innerHTML = '<div class="empty-note">ยังไม่มีโน้ต เพิ่มอัปเดตแรกได้เลย</div>';
     return;
   }
-  $('#tm-notes').innerHTML = notes.map(n=>`
-    <div class="note-item">
-      <div class="note-date">${fmtDateTime(n.created_at)}</div>
-      <div class="note-content">${escapeHtml(n.content)}</div>
+  $('#tm-notes').innerHTML = currentNotesCache.map(n=>`
+    <div class="note-item" data-note-id="${n.id}">
+      <div class="note-date-row">
+        <div class="note-date-left">
+          <button type="button" class="note-edit-btn" data-note-id="${n.id}" title="แก้ไขโน้ตนี้">✎</button>
+          <span class="note-date">${fmtDateTime(n.created_at)}</span>
+        </div>
+      </div>
+      <div class="note-content" data-note-id="${n.id}">${escapeHtml(n.content)}</div>
     </div>
   `).join('');
+  $all('.note-edit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>startNoteEdit(btn.dataset.noteId));
+  });
+}
+
+function startNoteEdit(noteId){
+  const item = document.querySelector(`.note-item[data-note-id="${noteId}"]`);
+  const note = currentNotesCache.find(n=>String(n.id)===String(noteId));
+  if(!item || !note) return;
+  const contentEl = item.querySelector('.note-content');
+  contentEl.outerHTML = `
+    <div class="note-edit-wrap">
+      <textarea class="note-edit-textarea">${escapeHtml(note.content)}</textarea>
+      <div class="note-edit-actions">
+        <button type="button" class="note-edit-cancel">ยกเลิก</button>
+        <button type="button" class="note-edit-save">บันทึก</button>
+      </div>
+    </div>
+  `;
+  const wrap = item.querySelector('.note-edit-wrap');
+  wrap.querySelector('.note-edit-cancel').addEventListener('click', ()=> renderNotes(currentNotesCache));
+  wrap.querySelector('.note-edit-save').addEventListener('click', async ()=>{
+    const newContent = wrap.querySelector('.note-edit-textarea').value.trim();
+    if(!newContent) return;
+    const { error } = await sb.from('task_notes').update({content:newContent}).eq('id', noteId);
+    if(error){ showToast('แก้ไขโน้ตไม่สำเร็จ: '+error.message); return; }
+    const { data } = await sb.from('task_notes').select('*').eq('task_id', activeTaskId).order('created_at',{ascending:false});
+    renderNotes(data);
+    if(data && data.length) latestNoteByTask[activeTaskId] = data[0];
+    if(currentView==='work') renderWorkLists();
+    else if(currentView==='home') renderHome();
+    showToast('แก้ไขโน้ตแล้ว ✓');
+  });
 }
 
 $('#tm-note-submit').addEventListener('click', async ()=>{
@@ -996,6 +1263,17 @@ function renderHome(){
       </div>
     </div>
 
+    <div class="panel-grid">
+      <div class="panel">
+        <h3>ใกล้ครบกำหนด</h3>
+        ${upcomingListHtml()}
+      </div>
+      <div class="panel">
+        <h3>เสร็จล่าสุด</h3>
+        ${recentDoneListHtml()}
+      </div>
+    </div>
+
     <div class="panel" style="margin-bottom:16px;">
       <h3>แนวโน้มงานที่เสร็จ (6 เดือนล่าสุด)</h3>
       <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
@@ -1009,17 +1287,6 @@ function renderHome(){
       <div class="panel">
         <h3>หมวดหมู่ของงานที่เสร็จ (ช่วงที่เลือก)</h3>
         ${categoryBarsHtml(completedInRange)}
-      </div>
-    </div>
-
-    <div class="panel-grid">
-      <div class="panel">
-        <h3>ใกล้ครบกำหนด</h3>
-        ${upcomingListHtml()}
-      </div>
-      <div class="panel">
-        <h3>เสร็จล่าสุด</h3>
-        ${recentDoneListHtml()}
       </div>
     </div>
   `;
