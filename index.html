@@ -66,7 +66,7 @@
   /* ---------- APP SHELL ---------- */
   #app-screen{display:flex;min-height:100vh;}
   .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
-  .shortcut-section{margin-bottom:20px;padding:0 8px;}
+  .shortcut-section{margin-bottom:20px;padding:0 8px;margin-top:auto;}
   .shortcut-section-label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;padding:0 2px;}
   .shortcut-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
   .shortcut-item{position:relative;}
@@ -92,7 +92,7 @@
   .nav-item:hover{background:var(--surface-soft);color:var(--ink);}
   .nav-item.active{background:var(--purple-soft);color:var(--purple);}
   .nav-icon{width:18px;text-align:center;}
-  .sidebar-footer{margin-top:auto;border-top:1px solid var(--border);padding-top:14px;}
+  .sidebar-footer{border-top:1px solid var(--border);padding-top:14px;}
   .user-email{font-size:12px;color:var(--ink-soft);padding:0 8px;margin-bottom:8px;word-break:break-all;}
   .logout-btn{background:none;color:var(--ink-soft);font-size:13px;font-weight:600;padding:8px;width:100%;text-align:left;border-radius:var(--radius-sm);}
   .logout-btn:hover{background:var(--coral-soft);color:var(--coral);}
@@ -154,9 +154,17 @@
   .section-title.done .count-pill{background:var(--mint-soft);color:#1a8a7c;}
 
   .task-list{display:flex;flex-direction:column;gap:9px;}
-  .task-card{display:flex;align-items:center;gap:13px;background:var(--surface);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-soft);cursor:pointer;transition:transform .1s;}
+  .task-card{display:flex;align-items:center;gap:13px;background:var(--surface);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-soft);cursor:pointer;transition:transform .1s,box-shadow .15s;}
   .task-card:hover{transform:translateY(-1px);}
   .task-card.done{opacity:.72;}
+  .task-card.pinned{background:linear-gradient(135deg,var(--yellow-soft),var(--surface) 55%);border:1.5px solid var(--yellow);}
+  .task-card.dragging{opacity:.4;}
+  .task-card.drag-over{box-shadow:0 0 0 2px var(--purple) inset;}
+  .drag-handle{flex-shrink:0;color:var(--ink-soft);cursor:grab;padding:2px 2px;font-size:14px;line-height:1;touch-action:none;}
+  .drag-handle:active{cursor:grabbing;}
+  .pin-btn{flex-shrink:0;background:none;color:var(--border);font-size:16px;line-height:1;padding:2px;border-radius:6px;}
+  .pin-btn:hover{color:var(--yellow);}
+  .pin-btn.active{color:var(--yellow);}
   .mood-dot{border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;flex-shrink:0;}
   .task-body{flex:1;min-width:0;}
   .task-title{font-weight:700;font-size:14.5px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -729,7 +737,7 @@ $all('[data-view]').forEach(b=> b.addEventListener('click', ()=>switchView(b.dat
 let latestNoteByTask = {};
 
 async function loadTasks(){
-  const { data, error } = await sb.from('tasks').select('*').order('created_at', {ascending:true});
+  const { data, error } = await sb.from('tasks').select('*').order('sort_order', {ascending:true, nullsFirst:false}).order('created_at', {ascending:true});
   if(error){ showToast('โหลดข้อมูลไม่สำเร็จ: '+error.message); return; }
   tasksCache = data || [];
 
@@ -872,10 +880,13 @@ $('#add-form').addEventListener('submit', async (e)=>{
     await saveCategories([...userCategories, category]);
   }
 
+  const maxSort = tasksCache.reduce((m,t)=> Math.max(m, t.sort_order||0), 0);
+
   const { data, error } = await sb.from('tasks').insert({
     user_id: currentUser.id, title, category,
     urgency: addUrgency, impact: addImpact,
-    status: 'ยังไม่ทำ', deadline
+    status: 'ยังไม่ทำ', deadline,
+    sort_order: maxSort + 1
   }).select().single();
 
   if(error){ showToast('เพิ่มงานไม่สำเร็จ: '+error.message); return; }
@@ -1127,7 +1138,7 @@ function renderWork(){
 
   el.innerHTML = `
     <div class="view-header">
-      <div><h1>Work</h1><div class="view-sub">งานทั้งหมดของคุณ เรียงตามความสำคัญ</div></div>
+      <div><h1>Work</h1><div class="view-sub">งานทั้งหมดของคุณ ลากเพื่อจัดลำดับได้เลย</div></div>
     </div>
     <div class="toolbar">
       <input type="text" id="work-search" placeholder="ค้นหางาน..." value="${escapeHtml(workSearch)}">
@@ -1145,6 +1156,16 @@ function renderWork(){
   renderWorkLists();
 }
 
+function sortForDisplay(list){
+  return [...list].sort((a,b)=>{
+    const pa = a.pinned ? 1 : 0, pb = b.pinned ? 1 : 0;
+    if(pa !== pb) return pb - pa;
+    const sa = a.sort_order ?? 0, sb2 = b.sort_order ?? 0;
+    if(sa !== sb2) return sa - sb2;
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
+}
+
 function renderWorkLists(){
   const q = workSearch.trim().toLowerCase();
   let filtered = tasksCache.filter(t=>{
@@ -1153,22 +1174,105 @@ function renderWorkLists(){
     return true;
   });
 
-  const notDone = filtered.filter(t=>t.status!=='เสร็จแล้ว').sort((a,b)=>{
-    if(a.deadline && b.deadline) return new Date(a.deadline)-new Date(b.deadline);
-    if(a.deadline) return -1;
-    if(b.deadline) return 1;
-    return new Date(a.created_at)-new Date(b.created_at);
-  });
-  const done = filtered.filter(t=>t.status==='เสร็จแล้ว').sort((a,b)=> new Date(b.completed_at||b.created_at)-new Date(a.completed_at||a.created_at));
+  const notDone = sortForDisplay(filtered.filter(t=>t.status!=='เสร็จแล้ว'));
+  const done = sortForDisplay(filtered.filter(t=>t.status==='เสร็จแล้ว'));
 
   let html = `<div class="section-title">ยังไม่เสร็จ <span class="count-pill">${notDone.length}</span></div>`;
-  html += notDone.length ? `<div class="task-list">${notDone.map(taskCardHtml).join('')}</div>` : emptyStateHtml('ไม่มีงานค้าง เยี่ยมมาก! 🎉');
+  html += notDone.length ? `<div class="task-list" data-group="active">${notDone.map(taskCardHtml).join('')}</div>` : emptyStateHtml('ไม่มีงานค้าง เยี่ยมมาก! 🎉');
 
   html += `<div class="section-title done">เสร็จแล้ว <span class="count-pill">${done.length}</span></div>`;
-  html += done.length ? `<div class="task-list">${done.map(taskCardHtml).join('')}</div>` : emptyStateHtml('ยังไม่มีงานที่เสร็จในตอนนี้');
+  html += done.length ? `<div class="task-list" data-group="done">${done.map(taskCardHtml).join('')}</div>` : emptyStateHtml('ยังไม่มีงานที่เสร็จในตอนนี้');
 
   $('#work-lists').innerHTML = html;
-  $all('.task-card').forEach(card=> card.addEventListener('click', ()=>openTaskModal(card.dataset.id)));
+  $all('.task-card').forEach(card=> card.addEventListener('click', (e)=>{
+    if(e.target.closest('.pin-btn') || e.target.closest('.drag-handle')) return;
+    openTaskModal(card.dataset.id);
+  }));
+  $all('.pin-btn').forEach(btn=> btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    togglePin(btn.dataset.id);
+  }));
+  wireDragAndDrop();
+}
+
+async function togglePin(taskId){
+  const t = tasksCache.find(x=>x.id===taskId);
+  if(!t) return;
+  const newVal = !t.pinned;
+  const { error } = await sb.from('tasks').update({pinned:newVal}).eq('id', taskId);
+  if(error){ showToast('อัปเดตไม่สำเร็จ: '+error.message); return; }
+  t.pinned = newVal;
+  renderWorkLists();
+  if(currentView==='home') renderHome();
+  showToast(newVal ? 'ติดดาวแล้ว ⭐' : 'เอาดาวออกแล้ว');
+}
+
+// ---------- DRAG & DROP REORDER ----------
+let dragSrcId = null;
+
+function wireDragAndDrop(){
+  $all('.task-card').forEach(card=>{
+    card.addEventListener('dragstart', (e)=>{
+      dragSrcId = card.dataset.id;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try{ e.dataTransfer.setData('text/plain', card.dataset.id); }catch(err){}
+    });
+    card.addEventListener('dragend', ()=>{
+      card.classList.remove('dragging');
+      $all('.task-card').forEach(c=>c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      if(card.dataset.id === dragSrcId) return;
+      card.classList.add('drag-over');
+      e.dataTransfer.dropEffect = 'move';
+    });
+    card.addEventListener('dragleave', ()=> card.classList.remove('drag-over'));
+    card.addEventListener('drop', async (e)=>{
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      const targetId = card.dataset.id;
+      if(!dragSrcId || dragSrcId === targetId) return;
+      const list = card.closest('.task-list');
+      if(!list) return;
+      await reorderWithinList(list, dragSrcId, targetId);
+      dragSrcId = null;
+    });
+  });
+}
+
+async function reorderWithinList(listEl, srcId, targetId){
+  const groupName = listEl.dataset.group;
+  const done = groupName==='done';
+  const q = workSearch.trim().toLowerCase();
+  let filtered = tasksCache.filter(t=>{
+    if(q && !t.title.toLowerCase().includes(q)) return false;
+    if(workCategoryFilter && t.category !== workCategoryFilter) return false;
+    return (t.status==='เสร็จแล้ว') === done;
+  });
+  let ordered = sortForDisplay(filtered).map(t=>t.id);
+  const srcIdx = ordered.indexOf(srcId);
+  const targetIdx = ordered.indexOf(targetId);
+  if(srcIdx===-1 || targetIdx===-1) return;
+  ordered.splice(srcIdx, 1);
+  const insertAt = ordered.indexOf(targetId);
+  ordered.splice(insertAt, 0, srcId);
+
+  // Reassign sort_order sequentially for this group; unpin dragged item stays in its pinned state,
+  // but a manual drag always sets an explicit order so it "sticks" where dropped.
+  const updates = ordered.map((id, i)=> ({ id, sort_order: i + 1 }));
+  updates.forEach(u=>{
+    const t = tasksCache.find(x=>x.id===u.id);
+    if(t) t.sort_order = u.sort_order;
+  });
+  renderWorkLists();
+
+  for(const u of updates){
+    const { error } = await sb.from('tasks').update({ sort_order: u.sort_order }).eq('id', u.id);
+    if(error){ showToast('บันทึกลำดับไม่สำเร็จ: '+error.message); return; }
+  }
+  showToast('จัดลำดับแล้ว');
 }
 
 function emptyStateHtml(msg){
@@ -1181,7 +1285,9 @@ function taskCardHtml(t){
   const note = latestNoteByTask[t.id];
   const catColor = colorForCategory(t.category);
   return `
-    <div class="task-card ${done?'done':''}" data-id="${t.id}">
+    <div class="task-card ${done?'done':''} ${t.pinned?'pinned':''}" data-id="${t.id}" draggable="true">
+      <span class="drag-handle" title="ลากเพื่อจัดลำดับ">⠿</span>
+      <button type="button" class="pin-btn ${t.pinned?'active':''}" data-id="${t.id}" title="${t.pinned?'เอาดาวออก':'ติดดาว'}">${t.pinned?'★':'☆'}</button>
       ${moodDot(t)}
       <div class="task-body">
         <div class="task-title-row">
