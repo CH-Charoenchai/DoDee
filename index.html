@@ -196,7 +196,11 @@
   .settings-panel{background:var(--surface);border-radius:var(--radius-md);padding:22px;box-shadow:var(--shadow-soft);margin-bottom:18px;width:100%;}
   .settings-panel h3{margin:0 0 4px;font-size:16px;}
   .settings-panel .settings-sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
-  .cat-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .cat-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;transition:box-shadow .15s;}
+  .cat-row.dragging{opacity:.4;}
+  .cat-row.drag-over{box-shadow:0 0 0 2px var(--purple) inset;border-radius:var(--radius-sm);}
+  .cat-drag-handle{flex-shrink:0;color:var(--ink-soft);cursor:grab;font-size:14px;padding:2px 2px;touch-action:none;}
+  .cat-drag-handle:active{cursor:grabbing;}
   .cat-row input{flex:1;padding:9px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-soft);font-size:13.5px;outline:none;}
   .cat-row input:focus{border-color:var(--purple);}
   .cat-icon-btn{width:32px;height:32px;border-radius:50%;background:var(--surface-soft);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
@@ -1631,12 +1635,14 @@ function renderSettings(){
 
 function renderCatList(){
   $('#cat-list').innerHTML = userCategories.map((c,i)=>`
-    <div class="cat-row" data-idx="${i}">
+    <div class="cat-row" data-idx="${i}" data-cat-name="${escapeHtml(c)}" draggable="true">
+      <span class="cat-drag-handle" title="ลากเพื่อจัดลำดับ">⠿</span>
       <input type="color" class="cat-color-input" value="${colorForCategory(c)}" data-cat="${escapeHtml(c)}">
       <input type="text" value="${escapeHtml(c)}" data-orig="${escapeHtml(c)}">
       <button type="button" class="cat-icon-btn cat-delete" title="ลบ">🗑</button>
     </div>
   `).join('');
+  wireCategoryDragAndDrop();
 
   $all('.cat-color-input').forEach(inp=>{
     inp.addEventListener('input', (e)=> saveCategoryColor(e.target.dataset.cat, e.target.value));
@@ -1677,6 +1683,47 @@ function renderCatList(){
       saveCategories(userCategories.filter(c=>c!==val));
       renderCatList();
       showToast('ลบหมวดหมู่แล้ว');
+    });
+  });
+}
+
+let catDragSrcName = null;
+function wireCategoryDragAndDrop(){
+  $all('.cat-row').forEach(row=>{
+    row.addEventListener('dragstart', (e)=>{
+      // don't start a row-drag if the user is interacting with an input/button
+      if(e.target.closest('input') || e.target.closest('button')){ e.preventDefault(); return; }
+      catDragSrcName = row.dataset.catName;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try{ e.dataTransfer.setData('text/plain', row.dataset.catName); }catch(err){}
+    });
+    row.addEventListener('dragend', ()=>{
+      row.classList.remove('dragging');
+      $all('.cat-row').forEach(r=>r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      if(row.dataset.catName === catDragSrcName) return;
+      row.classList.add('drag-over');
+      e.dataTransfer.dropEffect = 'move';
+    });
+    row.addEventListener('dragleave', ()=> row.classList.remove('drag-over'));
+    row.addEventListener('drop', async (e)=>{
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      const targetName = row.dataset.catName;
+      if(!catDragSrcName || catDragSrcName === targetName) return;
+      const reordered = [...userCategories];
+      const srcIdx = reordered.indexOf(catDragSrcName);
+      const targetIdx = reordered.indexOf(targetName);
+      if(srcIdx===-1 || targetIdx===-1) return;
+      reordered.splice(srcIdx, 1);
+      reordered.splice(reordered.indexOf(targetName), 0, catDragSrcName);
+      catDragSrcName = null;
+      await saveCategories(reordered);
+      renderCatList();
+      showToast('จัดลำดับหมวดหมู่แล้ว');
     });
   });
 }
